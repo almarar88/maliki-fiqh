@@ -60,7 +60,8 @@ function retrieve(db, q, k = 10, onlyCh = null) {
 }
 async function llm(env, system, user, max = 700) {
   const r = await env.AI.run(MODEL, { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], max_tokens: max, temperature: 0.2 });
-  return (r && (r.response ?? r.result?.response)) || '';
+  const v = r && (r.response ?? r.result?.response);
+  return v == null ? '' : typeof v === 'string' ? v : JSON.stringify(v);
 }
 const BASE_RULES = `أنت مساعد مراجعة لطلاب الفقه المالكي في موقع «المقارن الفقهي المالكي». قواعد صارمة:
 - اعتمد فقط على النصوص المعطاة بين علامتي <نصوص>. لا تستعمل معلومات من خارجها، ولا تخترع نصًّا أو قولًا أو دليلًا.
@@ -122,8 +123,10 @@ export default {
         const ans = await llm(env, BASE_RULES + `\n- المطلوب: أنشئ 4 أسئلة اختيار من متعدد من النصوص فقط. أخرج JSON فقط بلا أي كلام آخر، بالشكل: [{"q":"...","options":["...","...","...","..."],"answer":0,"ref":1}] حيث answer رقم الخيار الصحيح (من 0) وref رقم المقطع الذي يثبت الجواب.`, `<نصوص>\n${fmt(pick.slice(0, 14))}\n</نصوص>`, 900);
         const m = ans.match(/\[[\s\S]*\]/); let qs = [];
         try { qs = JSON.parse(m ? m[0] : '[]'); } catch { qs = []; }
+        if (!Array.isArray(qs)) qs = Array.isArray(qs.questions) ? qs.questions : [];
         qs = qs.filter(x => x && x.q && Array.isArray(x.options) && x.options.length >= 2 && Number.isInteger(x.answer)).slice(0, 5)
           .filter(x => x.answer >= 0 && x.answer < x.options.length)
+          .filter(x => !/[A-Za-z\u0400-\u04FF\u3040-\u9FFF]/.test(x.q + x.options.join(' ')))
           .map(x => { const r = srcs(pick)[(x.ref || 1) - 1] || null; return { q: String(x.q), options: x.options.map(String), answer: x.answer, tid: r ? r.tid : null, quote: r ? r.excerpt.slice(0, 180) : '', refSrc: r }; });
         res = { questions: qs, label: 'أسئلة مولّدة آليًا من نصوص الباب', disclaimer: DISCLAIMER };
       } else if (mode === 'compare') {

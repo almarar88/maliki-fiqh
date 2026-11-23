@@ -622,7 +622,7 @@ async function aiQuiz(box) {
   const ch = CH[RV.scope] ? RV.scope : pick(DB.chapters.filter(c => ORDER.filter(t => hasText(c.passages[t])).length >= 3)).id;
   box.innerHTML = `<div class="qbox panel"><div class="hint">أسئلة يولّدها المساعد آليًا من نصوص «${esc(CH[ch].title)}» — <span class="ailabel">آلي</span></div>${thinking('يولّد الأسئلة…')}</div>`;
   try {
-    const j = await ai('quiz', { ch }); const qs = j.questions || []; if (!qs.length) throw new Error('لم يُولَّد أي سؤال صالح، جرّب مرة أخرى.');
+    const j = await ai('quiz', { ch, v: 2 }); const qs = j.questions || []; if (!qs.length) throw new Error('لم يُولَّد أي سؤال صالح، جرّب مرة أخرى.');
     let k = 0;
     const show = () => { const q = qs[k]; if (!q) { box.innerHTML = `<div class="qbox panel"><p>انتهت الأسئلة الآلية لهذا الباب.</p><button class="btn primary" data-act="next">أسئلة جديدة</button></div>`; return; }
       box.innerHTML = `<div class="qbox panel reveal in"><div class="hint">سؤال آلي ${ar(k + 1)}/${ar(qs.length)} — «${esc(CH[ch].title)}» <span class="ailabel">آلي — راجع النص</span></div><div class="qtext">${esc(q.q)}</div>
