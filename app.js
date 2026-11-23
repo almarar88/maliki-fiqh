@@ -96,6 +96,21 @@ const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { cons
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const todayStr = () => new Date().toLocaleDateString('en-CA');
 
+
+/* ---------- credit & نبذة (نص المُعِدّ حرفيًا) ---------- */
+const CREDIT_NAME = 'رشيد ايت خطر';
+const NABDHA = ['تيسيرًا على طلبة الفقه المالكي، وجمعًا لمتون المذهب المتفرقة التي يحتاج إليها الطالب في الحفظ والمراجعة، أعددتُ هذا العمل جامعًا بين جملة من المتون الفقهية المعتمدة، وفق التدرج المعروف في دراسة المذهب، وهي: متن الأخضري، ورُمز إليه بحرف (ي)، ومتن ابن عاشر، ورُمز إليه بحرف (ع)، ونظم البشار، ورُمز إليه بحرف (ش)، ومختصر خليل، ورُمز إليه بحرف (خ)، ومتن الرسالة، ورُمز إليه بحرف (س).', 'وقد قصدتُ من هذا الجمع تيسير المقارنة بين المسائل الفقهية كما وردت في المتون نثرًا ونظمًا، وإبراز أوجه الاتفاق والاختلاف في عرضها، مع الاقتصار على جملة من الأبواب والمسائل المهمة؛ لتكون عونًا للطالب على الحفظ والمراجعة وضبط مسائل المذهب.'];
+const SYMID = { 'ي': 'akhdari', 'ع': 'ashir', 'ش': 'bashar', 'خ': 'khalil', 'س': 'risala' };
+const creditHTML = (cls = '') => `<p class="credit ${cls}"><span class="cl">فكرة وإعداد:</span> <b>${CREDIT_NAME}</b> <span class="pen">✍️</span></p>`;
+function nabdhaHTML() {
+  const fmtP = p => esc(p).replace(/\((ي|ع|ش|خ|س)\)/g, (m, ch) => `(<span class="ibadge" style="--c:var(--c-${SYMID[ch]})">${ch}</span>)`);
+  return `<section class="nabdha panel frame reveal">
+    <svg class="cn a"><use href="#corner"/></svg><svg class="cn b"><use href="#corner"/></svg><svg class="cn c"><use href="#corner"/></svg><svg class="cn d"><use href="#corner"/></svg>
+    <div class="nb-head"><svg class="nb-star"><use href="#star8"/></svg><h2>نبذة عن العمل</h2><svg class="nb-star"><use href="#star8"/></svg></div>
+    <div class="nb-body">${NABDHA.map(p => `<p>${fmtP(p)}</p>`).join('')}</div>
+    <div class="nb-sig"><span class="nb-line"></span>${creditHTML('sig')}<span class="nb-line"></span></div>
+  </section>`;
+}
 /* ---------- data ---------- */
 const chap = id => CH[id] || DB.chapters[0];
 const items = p => p.sections.flatMap(s => s.items);
@@ -109,7 +124,8 @@ function passageText(c, tid, withSrc) {
   if (withSrc) s += 'المصدر: ' + p.sources.slice(0, 4).join(' ، ') + (p.sources.length > 4 ? ' …' : '') + '\n';
   return s;
 }
-const chapterText = (c, tids, withSrc) => `﴿ ${c.title} ﴾\n${c.sub}\n\n` + tids.map(t => passageText(c, t, withSrc)).join('\n') + '\n';
+const chapterText = (c, tids, withSrc) => `﴿ ${c.title} ﴾\n${c.sub}\n\n` + tids.map(t => passageText(c, t, withSrc)).join('\n') + '\n'
+  + `\n— المقارِن الفقهي المالكي · فكرة وإعداد: ${CREDIT_NAME} ✍️`;
 function chProgress(c) { const av = ORDER.filter(t => hasText(c.passages[t])); const d = av.filter(t => done.has(c.id + ':' + t)).length; return { av: av.length, d, pct: av.length ? Math.round(100 * d / av.length) : 0 }; }
 function progressPct() { let total = 0, d = 0; for (const c of DB.chapters) { const p = chProgress(c); total += p.av; d += p.d; } return { total, d, pct: total ? Math.round(100 * d / total) : 0 }; }
 const ring = (pct, c = 'var(--gold)', label = '', s = 52) => `<span class="ring" style="--p:0;--c:${c};--s:${s}px" data-p="${pct}"><svg viewBox="0 0 36 36"><circle class="bgc" cx="18" cy="18" r="15.9" pathLength="100"/><circle class="fg" cx="18" cy="18" r="15.9" pathLength="100"/></svg>${label !== null ? `<b>${label}</b>` : ''}</span>`;
@@ -244,6 +260,7 @@ function renderHome(app) {
       </div>
       <div class="hero-text">
         <h2 class="title">الأخضري · ابن عاشر · البشار · خليل · الرسالة</h2>
+        ${creditHTML('hero-credit')}
         <p>كل باب من أبواب العبادات جنبًا إلى جنب، بنصوصها الأصلية منقولة من مصادرها، مع رابط المصدر لكل فقرة.</p>
         <div class="cta">
           <button class="btn primary" data-go="read">${I.play} ابدأ القراءة</button>
@@ -265,6 +282,7 @@ function renderHome(app) {
     <div style="flex:1;min-width:0"><b>تابع من حيث توقفت: ${esc(last.title)}</b><div class="hint">أنهيت ${ar(pr.d)} من ${ar(pr.total)} نصًّا · مرتبتك: ${lv.name} · ${ar(G.xp)} نقطة · اليوم ${ar(G.today)}/${ar(S.goal)}</div></div>
     <button class="btn primary" data-ch="${last.id}">متابعة</button>
   </div>
+  ${nabdhaHTML()}
   <div class="sec-h">المتون الخمسة</div>
   <div class="textcards">${ORDER.map(t => `<div class="tcard panel reveal" style="--c:var(--c-${t})" data-t="${t}">${badge(t)}<div><h4>${T[t].name}</h4><p>${esc(T[t].book)}</p><p>${esc(T[t].author)}</p></div></div>`).join('')}</div>
   <div class="divider"></div>
@@ -681,6 +699,7 @@ function renderCoverage(app) {
 function renderAbout(app) {
   const saved = [...bm].map(k => { const [c, t] = k.split(':'); return CH[c] && T[t] ? { c: CH[c], t } : null; }).filter(Boolean);
   app.innerHTML = `<div class="about">
+    ${nabdhaHTML()}
     <div class="panel reveal" style="padding:18px"><h2 class="title" style="font-size:clamp(20px,4vw,28px)">عن الموقع ومنهجه</h2>
     <ul class="method"><li>كل نص في الموقع منقول آليًا من صفحة مصدر منشورة، ويظهر رابطها بجوار كل فقرة. لا إعادة صياغة ولا كتابة من الذاكرة.</li>
     <li>ما لم يُتحقق منه يُعلَّم «لم يُتحقق من النص بعد»، وما لا يُفرده المتن يُعلَّم «ليس في المتن».</li>
@@ -741,7 +760,7 @@ function route() {
 }
 async function boot() {
   applyLook(); bindChrome();
-  try { const r = await fetch('data/fiqh.json?v=2.2'); DB = await r.json(); }
+  try { const r = await fetch('data/fiqh.json?v=2.3'); DB = await r.json(); }
   catch { $('#app').innerHTML = '<div class="note">تعذّر تحميل البيانات. تحقّق من الاتصال ثم أعد التحميل.</div>'; return; }
   for (const t of DB.texts) T[t.id] = t; ORDER = DB.meta.order || DB.texts.map(t => t.id);
   for (const c of DB.chapters) CH[c.id] = c;
