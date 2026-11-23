@@ -741,7 +741,7 @@ function route() {
 }
 async function boot() {
   applyLook(); bindChrome();
-  try { const r = await fetch('data/fiqh.json?v=2.0'); DB = await r.json(); }
+  try { const r = await fetch('data/fiqh.json?v=2.1'); DB = await r.json(); }
   catch { $('#app').innerHTML = '<div class="note">تعذّر تحميل البيانات. تحقّق من الاتصال ثم أعد التحميل.</div>'; return; }
   for (const t of DB.texts) T[t.id] = t; ORDER = DB.meta.order || DB.texts.map(t => t.id);
   for (const c of DB.chapters) CH[c.id] = c;
