@@ -1,3 +1,7 @@
 sources/
 shots/
+shots2/
+shots-live/
 __pycache__/
+v1-backup/
+tools/_head.py
