@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>المقارِن الفقهي المالكي — ي ع ش خ س</title>
+<meta name="description" content="مقارنة نصوص الأخضري وابن عاشر والبشار وخليل والرسالة بابًا بابًا، بنصوصها الأصلية ومصادرها.">
+<meta name="theme-color" content="#1f4d43">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600;700&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="seal" aria-hidden="true"><span>م</span></div>
+    <div>
+      <h1>المقارِن الفقهي المالكي</h1>
+      <p class="tag">خمسة متون · باب بباب · بنصوصها الأصلية</p>
+    </div>
+  </div>
+  <div class="tools">
+    <button class="icon" id="btnSearch" title="بحث في كل المتون" aria-label="بحث">⌕</button>
+    <button class="icon" id="btnTheme" title="الوضع الليلي/النهاري" aria-label="تبديل المظهر">◐</button>
+    <button class="icon" id="btnMenu" title="المزيد" aria-label="القائمة">☰</button>
+  </div>
+</header>
+
+<nav class="views" id="views">
+  <button data-view="read" class="on">القراءة</button>
+  <button data-view="message">الرسالة الفقهية</button>
+  <button data-view="review">المراجعة</button>
+  <button data-view="coverage">جدول التوثيق</button>
+  <button data-view="about">عن الموقع</button>
+</nav>
+
+<section class="symbols" id="symbols" aria-label="المتون"></section>
+
+<main id="app"></main>
+
+<div class="sheet" id="menuSheet" hidden>
+  <div class="sheet-body">
+    <h3>إعدادات العرض</h3>
+    <label class="row">التخطيط
+      <select id="selLayout"><option value="side">جنبًا إلى جنب</option><option value="stack">مكدّس</option><option value="compact">ورقة مراجعة مختصرة</option></select>
+    </label>
+    <label class="row">الخط
+      <select id="selFont"><option value="amiri">أميري</option><option value="naskh">نسخ</option></select>
+    </label>
+    <label class="row">حجم الخط
+      <input type="range" id="rngSize" min="15" max="30" step="1">
+    </label>
+    <label class="row">المظهر
+      <select id="selTheme"><option value="light">نهاري</option><option value="sepia">ورقي</option><option value="dark">ليلي</option></select>
+    </label>
+    <label class="row chk"><input type="checkbox" id="chkSrc"> إظهار رابط المصدر عند كل فقرة</label>
+    <div class="row"><button id="btnPrint" class="btn">طباعة الباب الحالي</button><button id="btnReset" class="btn ghost">مسح التقدّم والمحفوظات</button></div>
+    <button class="btn close" data-close>إغلاق</button>
+  </div>
+</div>
+
+<div class="sheet" id="searchSheet" hidden>
+  <div class="sheet-body wide">
+    <div class="searchbar">
+      <input id="q" type="search" placeholder="ابحث في كل المتون… (لا يلزم التشكيل)" autocomplete="off">
+      <button class="btn close" data-close>إغلاق</button>
+    </div>
+    <p class="hint">مثال: «الدلك» أو «سجدتان» أو «الخطبة». البحث يتجاهل الحركات والهمزات.</p>
+    <div id="results"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer class="foot">
+  النصوص منقولة من مصادرها كما هي، والرابط تحت كل نص. أي ملاحظة على نص تُراجَع على النسخ المطبوعة.
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
