@@ -587,7 +587,7 @@ function renderReview(app) {
   $('#scope').onchange = e => { RV.scope = e.target.value; showQ(); };
   app.onclick = e => {
     const m = e.target.closest('[data-mode]'); if (m) { RV.mode = m.dataset.mode; $$('[data-mode]').forEach(b => b.classList.toggle('on', b === m)); showQ(); return; }
-    const o = e.target.closest('.opt'); if (o && !RV.answered) return choose(o);
+    const o = e.target.closest('.opt'); if (o && !o.classList.contains('ai') && !RV.answered && RV.mode !== 'ai') return choose(o);
     if (e.target.closest('[data-act=next]')) return showQ();
     const f = e.target.closest('.fc'); if (f && !e.target.closest('a')) { f.classList.toggle('flipped'); return; }
     const fk = e.target.closest('[data-fk]'); if (fk) { answered(fk.dataset.fk === '1', fk); showQ(); return; }
@@ -741,7 +741,7 @@ function route() {
 }
 async function boot() {
   applyLook(); bindChrome();
-  try { const r = await fetch('data/fiqh.json?v=2.1'); DB = await r.json(); }
+  try { const r = await fetch('data/fiqh.json?v=2.2'); DB = await r.json(); }
   catch { $('#app').innerHTML = '<div class="note">تعذّر تحميل البيانات. تحقّق من الاتصال ثم أعد التحميل.</div>'; return; }
   for (const t of DB.texts) T[t.id] = t; ORDER = DB.meta.order || DB.texts.map(t => t.id);
   for (const c of DB.chapters) CH[c.id] = c;

@@ -510,3 +510,5 @@ table.cov td.verified{color:#5fd39f}table.cov td.partial{color:#f0c15a}table.cov
   .toolbar>*{flex:none}
   .layout-stack .absent-box{min-height:0;padding:14px}
 }
+.sheet h3 svg,.ai-hero h3 svg,.title svg{width:1em;height:1em;vertical-align:-.12em;fill:none;stroke:currentColor;stroke-width:1.8}
+.sheet h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
