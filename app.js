@@ -7,7 +7,7 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem('mfq.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('mfq.' + k, JSON.stringify(v)); } catch {} }
 };
-const APPV = '3.0';
+const APPV = '3.1';
 const AI_URL = 'https://maliki-fiqh-ai.amlab-q7.workers.dev';
 const ST_LABEL = { verified: 'موثّق من المصدر', partial: 'موثّق ومقابَل جزئيًا', absent: 'ليس في المتن', unverified: 'لم يُتحقق من النص بعد' };
 const ST_SHORT = { verified: '✓', partial: '◐', absent: '—', unverified: '✗' };
@@ -102,9 +102,9 @@ const todayStr = () => new Date().toLocaleDateString('en-CA');
 const CREDIT_NAME = 'رشيد ايت خطر';
 const NABDHA = ['تيسيرًا على طلبة الفقه المالكي، وجمعًا لمتون المذهب المتفرقة التي يحتاج إليها الطالب في الحفظ والمراجعة، أعددتُ هذا العمل جامعًا بين جملة من المتون الفقهية المعتمدة، وفق التدرج المعروف في دراسة المذهب، وهي: متن الأخضري، ورُمز إليه بحرف (ي)، ومتن ابن عاشر، ورُمز إليه بحرف (ع)، ونظم البشار، ورُمز إليه بحرف (ش)، ومختصر خليل، ورُمز إليه بحرف (خ)، ومتن الرسالة، ورُمز إليه بحرف (س).', 'وقد قصدتُ من هذا الجمع تيسير المقارنة بين المسائل الفقهية كما وردت في المتون نثرًا ونظمًا، وإبراز أوجه الاتفاق والاختلاف في عرضها، مع الاقتصار على جملة من الأبواب والمسائل المهمة؛ لتكون عونًا للطالب على الحفظ والمراجعة وضبط مسائل المذهب.'];
 const SYMID = { 'ي': 'akhdari', 'ع': 'ashir', 'ش': 'bashar', 'خ': 'khalil', 'س': 'risala' };
-const creditHTML = (cls = '') => `<p class="credit ${cls}"><span class="cl">فكرة وإعداد:</span> <b>${CREDIT_NAME}</b> <span class="pen">✍️</span></p>`;
+const creditHTML = (cls = '') => `<p class="credit ${cls}"><span class="cl">فكرة وإعداد:</span> <b>${CREDIT_NAME}</b><span class="pen" aria-hidden="true">✍️</span></p>`;
 function nabdhaHTML() {
-  const fmtP = p => esc(p).replace(/\((ي|ع|ش|خ|س)\)/g, (m, ch) => `(<span class="ibadge" style="--c:var(--c-${SYMID[ch]})">${ch}</span>)`);
+  const fmtP = p => esc(p).replace(/\((ي|ع|ش|خ|س)\)/g, (m, ch) => `(<b class="isym" style="--c:var(--c-${SYMID[ch]})">${ch}</b>)`);
   return `<section class="nabdha panel frame reveal">
     <svg class="cn a"><use href="#corner"/></svg><svg class="cn b"><use href="#corner"/></svg><svg class="cn c"><use href="#corner"/></svg><svg class="cn d"><use href="#corner"/></svg>
     <div class="nb-head"><svg class="nb-star"><use href="#star8"/></svg><h2>نبذة عن العمل</h2><svg class="nb-star"><use href="#star8"/></svg></div>
@@ -171,7 +171,10 @@ const Ambient = (() => {
 })();
 let scrollRaf = 0;
 addEventListener('scroll', () => { if (scrollRaf) return; scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; $('.pattern').style.setProperty('--sy', scrollY); }); }, { passive: true });
-const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -6% 0px' }) : null;
+let revealT = 0;
+const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting || e.boundingClientRect.bottom < 0) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -6% 0px' }) : null;
+// safety net: anything already scrolled past (fast flicks / jumps) is shown, so no blank gaps
+addEventListener('scroll', () => { if (revealT) return; revealT = setTimeout(() => { revealT = 0; $$('.reveal:not(.in)').forEach(el => { if (el.getBoundingClientRect().top < innerHeight) { el.classList.add('in'); io && io.unobserve(el); } }); }, 120); }, { passive: true });
 function observe(root = document) { $$('.reveal', root).forEach((el, i) => { if (!el.style.getPropertyValue('--i')) el.style.setProperty('--i', Math.min(i, 12)); io ? io.observe(el) : el.classList.add('in'); }); }
 const Confetti = (() => {
   const cv = $('#confetti'), cx = cv.getContext('2d'); let parts = [], raf = 0;
@@ -251,29 +254,27 @@ function renderHome(app) {
   const last = CH[S.ch];
   const ver = DB.chapters.reduce((a, c) => a + ORDER.filter(t => hasText(c.passages[t])).length, 0);
   app.innerHTML = `
-  <section class="hero">
-    <div>
-      <div class="rosette" aria-hidden="true">
-        <svg class="r ring1" viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width=".6" opacity=".55">${Array.from({ length: 16 }, (_, k) => `<ellipse cx="100" cy="100" rx="96" ry="38" transform="rotate(${k * 11.25} 100 100)"/>`).join('')}</g></svg>
-        <svg class="r ring2 draw" viewBox="0 0 200 200"><path d="M100 14l22 44 47-18-18 47 44 22-44 22 18 47-47-18-22 44-22-44-47 18 18-47-44-22 44-22-18-47 47 18z" fill="none" stroke="url(#gold)" stroke-width="1.4"/><path d="M100 44l13 26 28-10-10 28 26 13-26 13 10 28-28-10-13 26-13-26-28 10 10-28-26-13 26-13-10-28 28 10z" fill="none" stroke="url(#gold)" stroke-width="1"/><path d="M100 2v196M2 100h196M31 31l138 138M169 31L31 169" stroke="currentColor" stroke-width=".3" opacity=".5"/><circle cx="100" cy="100" r="62" fill="none" stroke="url(#gold)" stroke-width=".8"/></svg>
-        <div class="orbit">${ORDER.map((t, k) => `<span class="ob" style="--k:${k}"><span class="counter">${badge(t)}</span></span>`).join('')}</div>
-        <div class="hero-core"><div class="big">المقارِن<br>الفقهي</div><div class="small">خمسة متون · ${ar(DB.chapters.length)} بابًا</div></div>
-      </div>
-      <div class="hero-text">
-        <h2 class="title">الأخضري · ابن عاشر · البشار · خليل · الرسالة</h2>
-        ${creditHTML('hero-credit')}
-        <p>من المقدمات والعقيدة إلى العبادات والذبائح والنكاح والبيوع والأقضية والفرائض والآداب ومبادئ التصوف — كل باب جنبًا إلى جنب، بنصوصه الأصلية منقولة من مصادرها، مع رابط المصدر لكل فقرة.</p>
-        <div class="cta">
-          <button class="btn primary" data-go="read">${I.play} ابدأ القراءة</button>
-          <button class="btn" data-go="map">✧ خريطة الأبواب</button>
-          <button class="btn" data-go="review">★ راجع الآن</button>
-          <button class="btn" data-go="ai">${I.spark} اسأل المساعد</button>
-        </div>
+  <section class="hero2">
+    <div class="hero-bg" aria-hidden="true">
+      <svg class="r ring1" viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width=".5">${Array.from({ length: 16 }, (_, k) => `<ellipse cx="100" cy="100" rx="96" ry="38" transform="rotate(${k * 11.25} 100 100)"/>`).join('')}</g></svg>
+      <svg class="r ring2 draw" viewBox="0 0 200 200"><path d="M100 14l22 44 47-18-18 47 44 22-44 22 18 47-47-18-22 44-22-44-47 18 18-47-44-22 44-22-18-47 47 18z" fill="none" stroke="url(#gold)" stroke-width="1.2"/><path d="M100 44l13 26 28-10-10 28 26 13-26 13 10 28-28-10-13 26-13-26-28 10 10-28-26-13 26-13-10-28 28 10z" fill="none" stroke="url(#gold)" stroke-width=".9"/><circle cx="100" cy="100" r="62" fill="none" stroke="url(#gold)" stroke-width=".7"/></svg>
+    </div>
+    <div class="hero-in">
+      <p class="eyebrow">خمسة متون · ${ar(DB.chapters.length)} بابًا · على مذهب الإمام مالك</p>
+      <h1 class="hero-title">المقارِن الفقهي <span>المالكي</span></h1>
+      <ul class="hero-texts">${ORDER.map(t => `<li style="--c:var(--c-${t})" data-t="${t}"><b>${T[t].sym}</b><span>${T[t].name}</span></li>`).join('')}</ul>
+      ${creditHTML('hero-credit')}
+      <p class="hero-lead">من المقدمات والعقيدة إلى العبادات والذبائح والنكاح والبيوع والأقضية والفرائض والآداب ومبادئ التصوف — كل باب جنبًا إلى جنب، بنصوصه الأصلية منقولة من مصادرها، مع رابط المصدر لكل فقرة.</p>
+      <div class="cta">
+        <button class="btn primary" data-go="read">${I.play} ابدأ القراءة</button>
+        <button class="btn" data-go="map">✧ خريطة الأبواب</button>
+        <button class="btn" data-go="review">★ راجع الآن</button>
+        <button class="btn" data-go="ai">${I.spark} اسأل المساعد</button>
       </div>
     </div>
   </section>
   <div class="stats">
-    <div class="stat panel reveal"><b data-count="${DB.chapters.length}">٠</b><span>بابًا في ${ar(DB.meta.books.length)} كتب</span></div>
+    <div class="stat panel reveal"><b data-count="${DB.chapters.length}">٠</b><span>بابًا في ${ar(DB.meta.books.length)} كتابًا</span></div>
     <div class="stat panel reveal"><b data-count="${cnt.n}">٠</b><span>فقرة وبيتًا منقولة</span></div>
     <div class="stat panel reveal"><b data-count="${ver}">٠</b><span>خانة موثّقة (باب × متن)</span></div>
     <div class="stat panel reveal"><b data-count="${cnt.src}">٠</b><span>صفحة مصدر مرتبطة</span></div>
@@ -293,7 +294,7 @@ function renderHome(app) {
     if (e.target.closest('[data-go-install]')) return installApp();
     const g = e.target.closest('[data-go]'); if (g) return setView(g.dataset.go);
     const c = e.target.closest('[data-ch]'); if (c) return goChapter(c.dataset.ch);
-    const t = e.target.closest('.tcard'); if (t) { setView('about'); setTimeout(() => { const el = $('#bio-' + t.dataset.t); el && el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 450); }
+    const t = e.target.closest('.tcard,.hero-texts li'); if (t) { setView('about'); setTimeout(() => { const el = $('#bio-' + t.dataset.t); el && el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 450); }
   };
   countUp(app);
 }
@@ -428,7 +429,8 @@ function card(c, tid, idx) {
   let body = p.note ? `<div class="cnote">${esc(p.note)}</div>` : '';
   let total = 0;
   p.sections.forEach((sec, si) => {
-    if (sec.title) body += `<div class="stitle">${esc(sec.title)}</div>`;
+    const nz = x => (x || '').replace(/[\u064B-\u0652\u0670\u0640\s]/g, '');
+    if (sec.title && !(sec.items[0] && sec.items[0].kind === 'h' && nz(sec.items[0].t) === nz(sec.title))) body += `<div class="stitle">${esc(sec.title)}</div>`;
     body += '<div class="txt">';
     sec.items.forEach((it, ii) => {
       total += (it.t || it.a || '').length + (it.b || '').length;
@@ -964,7 +966,7 @@ function bindV3() {
 }
 function homeV3HTML() {
   const due = srsDue().length;
-  const tiles = [['read', '📖', 'القراءة المقارنة', `${ar(DB.chapters.length)} بابًا في ${ar(DB.meta.books.length)} كتب`], ['study', '🗓', 'خطتي', due ? `${ar(due)} بطاقة مستحقة` : 'خطة يومية وتكرار متباعد'], ['library', '📚', 'المكتبة', 'شروح وتراجم ونسخ ودروس صوتية'],
+  const tiles = [['read', '📖', 'القراءة المقارنة', `${ar(DB.chapters.length)} بابًا في ${ar(DB.meta.books.length)} كتابًا`], ['study', '🗓', 'خطتي', due ? `${ar(due)} بطاقة مستحقة` : 'خطة يومية وتكرار متباعد'], ['library', '📚', 'المكتبة', 'شروح وتراجم ونسخ ودروس صوتية'],
     ['review', '★', 'المراجعة', 'أسئلة ومستويات وإنجازات'], ['ai', '✦', 'المساعد', 'أسئلة من نصوص المتون فقط'], ['map', '✧', 'خريطة الأبواب', 'كوكبة الأبواب وتقدّمك']];
   return `<div class="sec-h">أقسام التطبيق</div><div class="tiles">${tiles.map(([v, i, l, s]) => `<button class="tile panel reveal" data-go="${v}"><span class="ti">${i}</span><b>${l}</b><small>${s}</small></button>`).join('')}</div>
   ${STANDALONE() ? '' : `<div class="instcard panel reveal"><div class="ic"><img src="assets/icons/icon-192.png" alt="" width="56" height="56"></div><div><b>ثبّته كتطبيق على جوالك</b><small>يفتح بملء الشاشة من أيقونته، ويعمل دون إنترنت.</small></div><button class="btn primary inst" data-go-install>📲 ثبّت</button></div>`}`;

@@ -63,7 +63,7 @@ async def main():
       if extra=='more':
         await pg.click('#tabbar [data-more]'); await pg.wait_for_timeout(500)
       if extra=='pal':
-        await pg.click('#btnPal'); await pg.fill('#palQ','شفعة'); await pg.wait_for_timeout(500)
+        await (pg.click('#btnPal') if await pg.is_visible('#btnPal') else pg.evaluate("document.querySelector('[data-ma=pal]').click()")); await pg.fill('#palQ','شفعة'); await pg.wait_for_timeout(500)
       if extra=='askch':
         await pg.click('[data-act=askch]'); await pg.wait_for_timeout(1200)
       if extra=='answer':
