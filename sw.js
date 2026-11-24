@@ -1,9 +1,9 @@
 /* Service worker — المقارن الفقهي المالكي. Full offline: app shell + all texts precached. */
-const VER = '3.1';
+const VER = '3.1.1';
 const V = 'mfq-v' + VER;
 const CORE = ['./', 'index.html', 'styles.css?v=' + VER, 'app.js?v=' + VER, 'data/fiqh.json?v=' + VER, 'data/library.json?v=' + VER, 'manifest.json',
   'assets/icon.svg', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/maskable-512.png', 'assets/icons/apple-touch-icon.png', 'assets/icons/favicon-32.png',
-  'assets/fonts/Amiri-Regular.woff2', 'assets/fonts/Amiri-Bold.woff2', 'assets/fonts/IBMPlexSansArabic-Regular.woff2', 'assets/fonts/IBMPlexSansArabic-SemiBold.woff2', 'assets/fonts/IBMPlexSansArabic-Bold.woff2'];
+  'assets/fonts/Amiri-Regular.woff2', 'assets/fonts/Amiri-Bold.woff2', 'assets/fonts/FiqhSansArabic-Regular.woff2', 'assets/fonts/FiqhSansArabic-SemiBold.woff2', 'assets/fonts/FiqhSansArabic-Bold.woff2'];
 self.addEventListener('install', e => {
   // upgrading from v1/v2 (whose pages have no update prompt): activate right away; from v3+ wait for the user's «حدِّث الآن»
   e.waitUntil(caches.open(V).then(c => c.addAll(CORE)).then(() => caches.keys()).then(ks => { if (ks.some(k => /^mfq-v[12]/.test(k))) return self.skipWaiting(); }));

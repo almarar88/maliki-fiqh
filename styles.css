@@ -1,13 +1,13 @@
 /* المقارِن الفقهي المالكي v3.1 — نظام تصميم موحّد */
 @font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Regular.woff2) format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Bold.woff2) format('woff2');font-weight:700;font-display:swap}
-@font-face{font-family:'Plex Arabic';src:url(assets/fonts/IBMPlexSansArabic-Regular.woff2) format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'Plex Arabic';src:url(assets/fonts/IBMPlexSansArabic-SemiBold.woff2) format('woff2');font-weight:500 600;font-display:swap}
-@font-face{font-family:'Plex Arabic';src:url(assets/fonts/IBMPlexSansArabic-Bold.woff2) format('woff2');font-weight:700 900;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Regular.woff2) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-SemiBold.woff2) format('woff2');font-weight:500 600;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Bold.woff2) format('woff2');font-weight:700 900;font-display:swap}
 @font-face{font-family:'Noto Naskh Arabic';src:url(assets/fonts/NotoNaskhArabic-VF.woff2) format('woff2');font-weight:400 700;font-display:swap}
 :root{
   /* type: one display/reading face (Amiri) + one UI face (IBM Plex Sans Arabic) */
-  --f-display:'Amiri',serif; --f-text:'Amiri',serif; --f-ui:'Plex Arabic',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-display:'Amiri',serif; --f-text:'Amiri',serif; --f-ui:'Fiqh Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --t-2xs:11px; --t-xs:12px; --t-sm:13.5px; --t-base:15px; --t-md:17px; --t-lg:20px; --t-xl:24px; --t-2xl:clamp(34px,9vw,54px);
   /* spacing scale */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;

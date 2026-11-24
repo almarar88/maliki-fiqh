@@ -7,7 +7,7 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem('mfq.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('mfq.' + k, JSON.stringify(v)); } catch {} }
 };
-const APPV = '3.1';
+const APPV = '3.1.1';
 const AI_URL = 'https://maliki-fiqh-ai.amlab-q7.workers.dev';
 const ST_LABEL = { verified: 'موثّق من المصدر', partial: 'موثّق ومقابَل جزئيًا', absent: 'ليس في المتن', unverified: 'لم يُتحقق من النص بعد' };
 const ST_SHORT = { verified: '✓', partial: '◐', absent: '—', unverified: '✗' };
