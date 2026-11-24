@@ -3,7 +3,10 @@
 // passages server-side; the client only sends a question or passage ids, never raw context.
 const DATA_URL = 'https://almarar88.github.io/maliki-fiqh/data/fiqh.json?v=3.0';
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-const ORIGINS = ['https://almarar88.github.io', 'http://localhost:8765', 'http://127.0.0.1:8765'];
+const ORIGINS = ['https://almarar88.github.io', 'https://almarar707.gitlab.io', 'http://localhost:8765', 'http://127.0.0.1:8765'];
+// GitLab Pages "unique domain" form: https://maliki-fiqh-<id>.gitlab.io
+const GL_UNIQUE = /^https:\/\/maliki-fiqh-[a-z0-9]+\.gitlab\.io$/;
+const allowed = o => ORIGINS.includes(o) || GL_UNIQUE.test(o);
 const DISCLAIMER = 'هذا شرح آلي مساعد للمراجعة، وليس فتوى ولا بديلًا عن العلماء. للفتوى في الإمارات: المركز الرسمي للإفتاء 800 22 24.';
 let DB = null, DBT = 0;
 
@@ -73,7 +76,7 @@ function fmt(list) { return list.map((c, i) => `[${i + 1}] (${c.sym} ${c.name} �
 function srcs(list) { return list.map((c, i) => ({ n: i + 1, sym: c.sym, tid: c.tid, name: c.name, ch: c.ch, chTitle: c.chTitle, src: c.src, excerpt: c.text.slice(0, 220) })); }
 
 function cors(origin) {
-  const o = ORIGINS.includes(origin) ? origin : ORIGINS[0];
+  const o = allowed(origin) ? origin : ORIGINS[0];
   return { 'Access-Control-Allow-Origin': o, 'Access-Control-Allow-Methods': 'POST, GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
 }
 function J(obj, status, origin) { return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', ...cors(origin) } }); }
@@ -85,7 +88,7 @@ export default {
     const url = new URL(req.url);
     if (url.pathname === '/health') return J({ ok: true, model: MODEL }, 200, origin);
     if (req.method !== 'POST') return J({ error: 'method' }, 405, origin);
-    if (!ORIGINS.includes(origin)) return J({ error: 'origin not allowed' }, 403, origin);
+    if (!allowed(origin)) return J({ error: 'origin not allowed' }, 403, origin);
     const ip = req.headers.get('CF-Connecting-IP') || 'x';
     const a = await env.RL_IP.limit({ key: ip }); const g = await env.RL_ALL.limit({ key: 'all' });
     if (!a.success || !g.success) return J({ error: 'rate', message: 'تجاوزت حدّ الطلبات المؤقت، حاول بعد دقيقة.' }, 429, origin);

@@ -1,0 +1,13 @@
+# GitLab Pages: publish the static site (no build step)
+pages:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - mkdir -p public
+    - cp -r index.html app.js styles.css sw.js manifest.json version.json data assets public/
+    - echo "published $(cat version.json)"
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
