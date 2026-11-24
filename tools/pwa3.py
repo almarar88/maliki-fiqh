@@ -20,7 +20,7 @@ async def main():
       m=await cdp.send('Page.getAppManifest'); print('manifest url:',m.get('url'),'errors:',m.get('errors'))
       print('sw controller:',await pg.evaluate("!!navigator.serviceWorker.controller"))
       print('caches:',await pg.evaluate("caches.keys()"))
-      n=await pg.evaluate("caches.open('mfq-v3.0').then(c=>c.keys()).then(k=>k.map(r=>r.url.split('/').slice(-2).join('/')))"); print('cached',len(n),n[:20])
+      n=await pg.evaluate("caches.keys().then(ks=>caches.open(ks.find(k=>k.startsWith('mfq-v')))).then(c=>c.keys()).then(k=>k.map(r=>r.url.split('/').slice(-2).join('/')))"); print('cached',len(n),n[:20])
       await ctx.set_offline(True); await pg.goto(BASE+'#read/faraid'); await pg.wait_for_timeout(2500)
       print('offline read ok:', await pg.evaluate("document.querySelectorAll('.card').length"), (await pg.title())[:30])
       await pg.screenshot(path='shots3/offline-read.png')

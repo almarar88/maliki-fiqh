@@ -7,7 +7,7 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem('mfq.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('mfq.' + k, JSON.stringify(v)); } catch {} }
 };
-const APPV = '3.1.1';
+const APPV = '3.2.0';
 const AI_URL = 'https://maliki-fiqh-ai.amlab-q7.workers.dev';
 const ST_LABEL = { verified: 'موثّق من المصدر', partial: 'موثّق ومقابَل جزئيًا', absent: 'ليس في المتن', unverified: 'لم يُتحقق من النص بعد' };
 const ST_SHORT = { verified: '✓', partial: '◐', absent: '—', unverified: '✗' };
@@ -918,14 +918,28 @@ function installApp() {
 }
 function swInit() {
   if (!('serviceWorker' in navigator) || location.protocol !== 'https:' && location.hostname !== 'localhost') return;
-  let reloading = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloading || !navigator.serviceWorker.controller) return; if (swInit.asked) { reloading = true; location.reload(); } });
-  navigator.serviceWorker.register('sw.js').then(reg => {
-    const offer = w => { if (!navigator.serviceWorker.controller) return; const bar = $('#upd'); bar.hidden = false; $('#updGo').onclick = () => { swInit.asked = true; w.postMessage('SKIP_WAITING'); bar.innerHTML = '<span>يُحدِّث…</span>'; }; };
-    if (reg.waiting) offer(reg.waiting);
-    reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed') offer(w); }); });
-    setInterval(() => reg.update().catch(() => {}), 3600e3);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+  const SS = window.sessionStorage, KEY = 'mfq.reloadedFor';
+  // reload at most once per version, so an update can never loop
+  const reloadOnce = why => { if (SS.getItem(KEY) === why) return; SS.setItem(KEY, why); location.reload(); };
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) reloadOnce('sw-' + APPV); });
+  navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'UPDATED' && e.data.ver !== APPV) reloadOnce('msg-' + e.data.ver); });
+  if (LS.get('lastVer', '') && LS.get('lastVer', '') !== APPV) setTimeout(() => toast('تم تحديث التطبيق إلى الإصدار ' + APPV + ' ✓'), 1200);
+  LS.set('lastVer', APPV);
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+    const check = () => {
+      reg.update().catch(() => {});
+      // belt and braces: if the server already has a newer build than this page, get onto it
+      fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(j => {
+        if (j && j.ver && j.ver !== APPV) { reg.update().catch(() => {}); setTimeout(() => reloadOnce('ver-' + j.ver), 4000); }
+      }).catch(() => {});
+    };
+    if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+    reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed' && reg.waiting) reg.waiting.postMessage('SKIP_WAITING'); }); });
+    check();
+    setInterval(check, 30 * 60e3);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    addEventListener('pageshow', e => { if (e.persisted) check(); });
   }).catch(() => {});
 }
 addEventListener('offline', () => { document.documentElement.classList.add('offline'); toast('أنت غير متصل — المتون والمراجعة تعمل من النسخة المحفوظة'); });
@@ -969,7 +983,7 @@ function homeV3HTML() {
   const tiles = [['read', '📖', 'القراءة المقارنة', `${ar(DB.chapters.length)} بابًا في ${ar(DB.meta.books.length)} كتابًا`], ['study', '🗓', 'خطتي', due ? `${ar(due)} بطاقة مستحقة` : 'خطة يومية وتكرار متباعد'], ['library', '📚', 'المكتبة', 'شروح وتراجم ونسخ ودروس صوتية'],
     ['review', '★', 'المراجعة', 'أسئلة ومستويات وإنجازات'], ['ai', '✦', 'المساعد', 'أسئلة من نصوص المتون فقط'], ['map', '✧', 'خريطة الأبواب', 'كوكبة الأبواب وتقدّمك']];
   return `<div class="sec-h">أقسام التطبيق</div><div class="tiles">${tiles.map(([v, i, l, s]) => `<button class="tile panel reveal" data-go="${v}"><span class="ti">${i}</span><b>${l}</b><small>${s}</small></button>`).join('')}</div>
-  ${STANDALONE() ? '' : `<div class="instcard panel reveal"><div class="ic"><img src="assets/icons/icon-192.png" alt="" width="56" height="56"></div><div><b>ثبّته كتطبيق على جوالك</b><small>يفتح بملء الشاشة من أيقونته، ويعمل دون إنترنت.</small></div><button class="btn primary inst" data-go-install>📲 ثبّت</button></div>`}`;
+  ${STANDALONE() ? '' : `<div class="instcard panel reveal"><div class="ic"><img src="assets/icons/icon-192.png?v=${APPV}" alt="" width="56" height="56"></div><div><b>ثبّته كتطبيق على جوالك</b><small>يفتح بملء الشاشة من أيقونته، ويعمل دون إنترنت.</small></div><button class="btn primary inst" data-go-install>📲 ثبّت</button></div>`}`;
 }
 
 /* ---------- chrome / boot ---------- */

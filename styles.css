@@ -1,10 +1,10 @@
 /* المقارِن الفقهي المالكي v3.1 — نظام تصميم موحّد */
-@font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Regular.woff2) format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Bold.woff2) format('woff2');font-weight:700;font-display:swap}
-@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Regular.woff2) format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-SemiBold.woff2) format('woff2');font-weight:500 600;font-display:swap}
-@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Bold.woff2) format('woff2');font-weight:700 900;font-display:swap}
-@font-face{font-family:'Noto Naskh Arabic';src:url(assets/fonts/NotoNaskhArabic-VF.woff2) format('woff2');font-weight:400 700;font-display:swap}
+@font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Regular.woff2?v=3.2.0) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Bold.woff2?v=3.2.0) format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Regular.woff2?v=3.2.0) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-SemiBold.woff2?v=3.2.0) format('woff2');font-weight:500 600;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Bold.woff2?v=3.2.0) format('woff2');font-weight:700 900;font-display:swap}
+@font-face{font-family:'Noto Naskh Arabic';src:url(assets/fonts/NotoNaskhArabic-VF.woff2?v=3.2.0) format('woff2');font-weight:400 700;font-display:swap}
 :root{
   /* type: one display/reading face (Amiri) + one UI face (IBM Plex Sans Arabic) */
   --f-display:'Amiri',serif; --f-text:'Amiri',serif; --f-ui:'Fiqh Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
@@ -812,3 +812,18 @@ html[data-theme=ink] .hero-bg{opacity:.2}
 .frame{padding:var(--s6) clamp(20px,4.5vw,36px) var(--s5)}
 .frame>.cn{width:30px;height:30px;opacity:.55}
 .frame>.cn.a{top:8px;right:8px}.frame>.cn.b{top:8px;left:8px}.frame>.cn.c{bottom:8px;right:8px}.frame>.cn.d{bottom:8px;left:8px}
+/* reveal v3.2: content is ALWAYS visible; entering the viewport only adds a short, optional lift-in.
+   (the old opacity:0 start could leave blank areas on iOS/WebKit if a transition never ran) */
+.reveal,.reveal.in{opacity:1!important;transform:none!important;transition:none!important}
+.reveal.in{animation:revealIn .5s var(--ease)}
+@keyframes revealIn{from{transform:translateY(10px)}to{transform:none}}
+html[data-motion=off] .reveal.in{animation:none}
+.tday small{white-space:normal!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* performance + iOS text rendering: no backdrop blur on content panels (dozens of blurred layers over
+   animated backgrounds stalled WebKit's rendering); only the header and tab bar keep the glass effect */
+.panel,.card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html[data-theme=ink]{--panel:rgba(16,30,33,.93);--panel2:rgba(22,40,44,.97)}
+html[data-theme=parchment]{--panel:rgba(255,251,241,.95);--panel2:rgba(255,252,245,.98)}
+html[data-theme=sepia]{--panel:rgba(250,241,222,.95);--panel2:rgba(252,245,230,.98)}
+/* text card header on narrow phones: actions drop to their own row */
+@media (max-width:420px){.chead{flex-wrap:wrap}.chead .meta{flex:1 1 calc(100% - 60px)}.cacts{flex:1 1 100%;justify-content:flex-start;padding-top:2px}}
