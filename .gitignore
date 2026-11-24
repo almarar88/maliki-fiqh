@@ -5,3 +5,7 @@ shots-live/
 __pycache__/
 v1-backup/
 tools/_head.py
+shots3/
+shots-credit/
+tools/v3js/
+tools/build_data_v2.py

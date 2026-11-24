@@ -56,6 +56,7 @@ texts=[
   'note':'حُذفت أرقام الحواشي وإشارات ألواح المخطوط (مثل: / خ ١٥٠ أ/). العناوين بين معقوفين من وضع المحقق.'},
 ]
 
+exec(open('tools/v3_defs.py').read())
 BOOKS=[('tahara','كتاب الطهارة'),('salat','كتاب الصلاة'),('zakat','كتاب الزكاة'),('siyam','كتاب الصيام والاعتكاف'),('hajj','كتاب الحج')]
 chapters=[
  ('miyah','tahara','باب المياه','أقسام المياه وما تحصل به الطهارة'),
@@ -88,6 +89,8 @@ chapters=[
  ('itikaf','siyam','باب الاعتكاف','شروطه ومبطلاته'),
  ('hajj','hajj','باب الحج والعمرة','أركانه وواجباته وسننه ومحظورات الإحرام'),
 ]
+BOOKS=BOOKS_PRE+BOOKS+BOOKS_POST
+chapters=CH_PRE+chapters+CH_POST
 chapters=[{'id':a,'book':b,'title':c,'sub':d} for a,b,c,d in chapters]
 P={c['id']:{} for c in chapters}
 def put(ch,tid,status,secs,note=None):
@@ -106,6 +109,7 @@ for ch,a,b in [('miyah','4.1','4.2'),('najasa','4.3','4.99'),('wudu','5.0','6.0'
                ('hayd','9.3','10.2'),('awqat','10.3','11.0'),('shurut','11.1','12.0'),('sifa','12.1','15.0'),('qada','15.1','16.0'),('sahw','16.1','end')]:
     put(ch,'akhdari','verified',[prose_section('',span(A,a,b))])
 for c in chapters:
+    if c['id'] in NEW: continue
     if 'akhdari' not in P[c['id']]:
         absent(c['id'],'akhdari','لم يتناول مختصر الأخضري هذا الباب؛ فهو مقصور على الطهارة والصلاة إلى السهو (فهرس الكتاب في الشاملة: الطهارة، التيمم، الحيض، النفاس، الأوقات، شروط الصلاة، السهو).','https://read.shamela.ws/book/9548')
 
@@ -181,6 +185,7 @@ HM=[('miyah','7.2','7.9'),('najasa','7.10','9.10'),('wudu','9.11','10.5'),('nawa
     ('siyam','28.16','31.1'),('itikaf','31.2','31.7'),('hajj','31.8','33.15')]
 for ch,a,b in HM: put(ch,'bashar','verified',[bsec('',a,b)])
 for c in chapters:
+    if c['id'] in NEW: continue
     if 'bashar' not in P[c['id']]:
         absent(c['id'],'bashar','لم نجد للبشار بابًا مستقلًا بهذا العنوان في «أسهل المسالك» (فهرس الكتاب في الشاملة)؛ قد تَرِد بعض مسائله ضمن أبواب أخرى.','https://shamela.ws/book/631')
 
@@ -195,7 +200,7 @@ def avs(lines):
 AM={'miyah':[(127,131)],'wudu':[(133,162)],'nawaqid':[(165,171)],'istinja':[(173,175)],'ghusl':[(178,200)],'hayd':[(196,199)],
     'tayammum':[(203,223)],'sifa':[(226,236),(253,269),(278,308)],'shurut':[(238,250)],'adhan':[(271,272)],'qasr':[(273,275)],
     'janaiz':[(310,315)],'nawafil':[(314,321)],'qada':[(316,317)],'eid':[(314,315)],'kusuf':[(314,315)],'istisqa':[(314,315)],
-    'sahw':[(323,348)],'jumua':[(350,361)],'jamaa':[(363,396)],'zakat':[(398,451)],'fitr':[(453,456)],'siyam':[(458,493)],'hajj':[(495,700)]}
+    'sahw':[(323,348)],'jumua':[(350,361)],'jamaa':[(363,396)],'zakat':[(398,451)],'fitr':[(453,456)],'siyam':[(458,493)],'hajj':[(495,616)]}
 NOTE_BRIEF={'eid':'ذكر الناظم صلاة العيد إجمالًا ضمن السنن فقط، ولم يفصّل صفتها.','kusuf':'ذكر الناظم الكسوف إجمالًا ضمن السنن فقط.','istisqa':'ذكر الناظم الاستسقاء إجمالًا ضمن السنن فقط.','hayd':'لم يُفرد الناظم للحيض بابًا؛ هذه أبياته ضمن موجبات الغسل.','qada':'بيت قضاء الفرض ضمن أبيات السنن.','janaiz':'لم يُفرد الناظم للجنائز بابًا؛ ذكر فروض صلاة الجنازة في فصل «وخمس صلوات فرض عين».'}
 for ch,rng in AM.items():
     vs=avs(rng); items=[]
@@ -212,11 +217,13 @@ for ch,rng in AM.items():
     P[ch]['ashir']={'status':'verified' if allm else 'partial','sections':[sec],'sources':srcs,
         'note':(NOTE_BRIEF.get(ch,'')+(' ' if ch in NOTE_BRIEF else '')+('' if allm else 'بعض الأبيات من مصدر واحد ولم تُطابَق آليًا على مصدر ثانٍ — عليها علامة «مصدر واحد».')).strip() or None}
     if not P[ch]['ashir']['note']: del P[ch]['ashir']['note']
+exec(open('tools/v3_texts.py').read())
 for c in chapters:
+    if c['id'] in NEW: continue
     if 'ashir' not in P[c['id']]:
         absent(c['id'],'ashir','لم يُفرد ابن عاشر لهذا الباب أبياتًا في «المرشد المعين» (راجعنا المتن كاملًا).',TIJ)
 for c in chapters: c['passages']=P[c['id']]
-out={'meta':{'title':'المقارِن الفقهي المالكي','version':2,'generated':datetime.datetime.now().isoformat(timespec='minutes'),
+out={'meta':{'title':'المقارِن الفقهي المالكي','version':3,'generated':datetime.datetime.now().isoformat(timespec='minutes'),
   'order':['akhdari','ashir','bashar','khalil','risala'],'books':[{'id':a,'title':b} for a,b in BOOKS]},'texts':texts,'chapters':chapters}
 _B=json.load(open('sources/wiki_bios.json'))
 for _t in texts:

@@ -1,4 +1,4 @@
-/* المقارِن الفقهي المالكي v2 — كل النصوص من data/fiqh.json (منقولة آليًا من مصادرها) */
+/* المقارِن الفقهي المالكي v3 — كل النصوص من data/fiqh.json (منقولة آليًا من مصادرها) */
 (() => {
 'use strict';
 const $ = (s, r = document) => r.querySelector(s);
@@ -7,6 +7,7 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem('mfq.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('mfq.' + k, JSON.stringify(v)); } catch {} }
 };
+const APPV = '3.0';
 const AI_URL = 'https://maliki-fiqh-ai.amlab-q7.workers.dev';
 const ST_LABEL = { verified: 'موثّق من المصدر', partial: 'موثّق ومقابَل جزئيًا', absent: 'ليس في المتن', unverified: 'لم يُتحقق من النص بعد' };
 const ST_SHORT = { verified: '✓', partial: '◐', absent: '—', unverified: '✗' };
@@ -220,14 +221,14 @@ function gain(xp, el) {
 }
 function checkGoal() { if (G.today >= S.goal && G.goalHit !== G.day) { G.goalHit = G.day; award('goal'); Confetti.burst(200); toast('أتممت هدف اليوم — بارك الله فيك 🎯'); } }
 function answered(ok, el) {
-  touchDay(); G.all++; G.today++;
+  touchDay(); G.all++; G.today++; logAct(); hap(ok ? 14 : [25, 45, 25]);
   if (ok) { G.ok++; G.streak++; G.best = Math.max(G.best, G.streak); gain(10 + Math.min(10, G.streak - 1), el); award('first'); if (G.streak === 5) award('streak5'); if (G.streak === 15) award('streak15'); }
   else G.streak = 0;
   checkGoal(); save(); updateRvTop();
 }
 
 /* ---------- router & views ---------- */
-const VIEWS = ['home', 'map', 'read', 'review', 'ai', 'message', 'coverage', 'about'];
+const VIEWS = ['home', 'map', 'read', 'review', 'study', 'library', 'ai', 'message', 'coverage', 'about'];
 function setView(v, push = true) {
   S.view = v; $$('#views button, #tabbar button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
   if (push) updateHash();
@@ -236,8 +237,8 @@ function setView(v, push = true) {
 }
 function updateHash() { const h = S.view === 'read' ? `#read/${S.ch}` : `#${S.view}`; if (location.hash !== h) history.replaceState(null, '', h); }
 function render() {
-  const app = $('#app'); app.onclick = null; app.onpointermove = null; app.className = ''; Speech.stop();
-  ({ home: renderHome, map: renderMap, read: renderRead, review: renderReview, ai: renderAI, message: renderMessage, coverage: renderCoverage, about: renderAbout }[S.view] || renderHome)(app);
+  closeItemBar(); const app = $('#app'); app.onclick = null; app.onpointermove = null; app.className = ''; Speech.stop();
+  ({ home: renderHome, map: renderMap, read: renderRead, review: renderReview, ai: renderAI, message: renderMessage, coverage: renderCoverage, about: renderAbout, study: renderStudy, library: renderLibrary }[S.view] || renderHome)(app);
   if (!document.startViewTransition || S.motion !== 'full') { app.classList.remove('view-enter'); void app.offsetWidth; app.classList.add('view-enter'); }
   observe(app); animateRings(app);
 }
@@ -261,7 +262,7 @@ function renderHome(app) {
       <div class="hero-text">
         <h2 class="title">الأخضري · ابن عاشر · البشار · خليل · الرسالة</h2>
         ${creditHTML('hero-credit')}
-        <p>كل باب من أبواب العبادات جنبًا إلى جنب، بنصوصها الأصلية منقولة من مصادرها، مع رابط المصدر لكل فقرة.</p>
+        <p>من المقدمات والعقيدة إلى العبادات والذبائح والنكاح والبيوع والأقضية والفرائض والآداب ومبادئ التصوف — كل باب جنبًا إلى جنب، بنصوصه الأصلية منقولة من مصادرها، مع رابط المصدر لكل فقرة.</p>
         <div class="cta">
           <button class="btn primary" data-go="read">${I.play} ابدأ القراءة</button>
           <button class="btn" data-go="map">✧ خريطة الأبواب</button>
@@ -272,7 +273,7 @@ function renderHome(app) {
     </div>
   </section>
   <div class="stats">
-    <div class="stat panel reveal"><b data-count="${DB.chapters.length}">٠</b><span>بابًا في ٥ كتب</span></div>
+    <div class="stat panel reveal"><b data-count="${DB.chapters.length}">٠</b><span>بابًا في ${ar(DB.meta.books.length)} كتب</span></div>
     <div class="stat panel reveal"><b data-count="${cnt.n}">٠</b><span>فقرة وبيتًا منقولة</span></div>
     <div class="stat panel reveal"><b data-count="${ver}">٠</b><span>خانة موثّقة (باب × متن)</span></div>
     <div class="stat panel reveal"><b data-count="${cnt.src}">٠</b><span>صفحة مصدر مرتبطة</span></div>
@@ -282,12 +283,14 @@ function renderHome(app) {
     <div style="flex:1;min-width:0"><b>تابع من حيث توقفت: ${esc(last.title)}</b><div class="hint">أنهيت ${ar(pr.d)} من ${ar(pr.total)} نصًّا · مرتبتك: ${lv.name} · ${ar(G.xp)} نقطة · اليوم ${ar(G.today)}/${ar(S.goal)}</div></div>
     <button class="btn primary" data-ch="${last.id}">متابعة</button>
   </div>
+  ${homeV3HTML()}
   ${nabdhaHTML()}
   <div class="sec-h">المتون الخمسة</div>
   <div class="textcards">${ORDER.map(t => `<div class="tcard panel reveal" style="--c:var(--c-${t})" data-t="${t}">${badge(t)}<div><h4>${T[t].name}</h4><p>${esc(T[t].book)}</p><p>${esc(T[t].author)}</p></div></div>`).join('')}</div>
   <div class="divider"></div>
   <p class="hint" style="text-align:center">تعليمي للمراجعة — ليس فتوى. ارجع إلى أهل العلم في النوازل.</p>`;
   app.onclick = e => {
+    if (e.target.closest('[data-go-install]')) return installApp();
     const g = e.target.closest('[data-go]'); if (g) return setView(g.dataset.go);
     const c = e.target.closest('[data-ch]'); if (c) return goChapter(c.dataset.ch);
     const t = e.target.closest('.tcard'); if (t) { setView('about'); setTimeout(() => { const el = $('#bio-' + t.dataset.t); el && el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 450); }
@@ -361,6 +364,7 @@ function renderRead(app) {
       <select class="btn sm" id="memSel" title="وضع الحفظ"><option value="off">وضع الحفظ: إيقاف</option><option value="words">حفظ: إخفاء كلمة وكلمة</option><option value="half">حفظ: إخفاء الشطر الثاني</option><option value="all">حفظ: إخفاء النص كاملًا</option></select>
       <button class="btn sm" data-act="speakall">${I.play} استماع</button>
       <button class="btn sm" data-act="aicmp">${I.spark} ملخّص مقارن آلي</button>
+      <button class="btn sm" data-act="askch">${I.spark} اسأل عن هذا الباب</button>
       <span class="sep"></span>
       <button class="btn sm" data-act="copy">${I.copy} نسخ</button>
       <button class="btn sm" data-act="share">${I.share} مشاركة</button>
@@ -390,8 +394,11 @@ function readClick(e, c) {
   const sw = e.target.closest('.sw,.cmpbar .chip[data-w]');
   if (sw) { FOCUS = FOCUS === sw.dataset.w ? '' : sw.dataset.w; $$('.sw').forEach(x => x.classList.toggle('focus', x.dataset.w === FOCUS)); $$('.cmpbar .chip').forEach(x => x.classList.toggle('on', x.dataset.w === FOCUS)); const f = $('.sw.focus'); if (f && sw.classList.contains('chip')) f.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' }); return; }
   const mw = e.target.closest('.mw,.mh'); if (mw) { mw.classList.toggle('shown'); return; }
-  const a = e.target.closest('[data-act]'); if (!a) return;
+  const a = e.target.closest('[data-act]');
+  if (!a) { const ie = e.target.closest('[data-ik]'); if (ie && !e.target.closest('a,button,.mh,.mw,.sw,select')) itemBar(ie, c); return; }
   const act = a.dataset.act, tid = a.dataset.t;
+  if (act === 'note') return noteSheet(c.id + ':' + tid);
+  if (act === 'askch') { AICH = c.id; return setView('ai'); }
   if (act === 'layout') { S.layout = S.layout === 'side' ? 'stack' : 'side'; save(); render(); }
   else if (act === 'cmp') { S.cmp = !S.cmp; FOCUS = ''; save(); render(); if (S.cmp) toast('الألفاظ المشتركة مسطّرة بالذهبي — كلما اشتد اللون زاد عدد المتون'); }
   else if (act === 'revealall') $$('.mw,.mh').forEach(x => x.classList.add('shown'));
@@ -402,10 +409,10 @@ function readClick(e, c) {
   else if (act === 'speak') Speech.toggle($$(`#card-${tid} [data-say]`), a);
   else if (act === 'aicmp') aiCompare(c);
   else if (act === 'explain') aiExplain(c, a.dataset.t, +a.dataset.si, +a.dataset.ii);
-  else if (act === 'doneall') { const before = chProgress(c); S.on.forEach(t => { if (hasText(c.passages[t])) done.add(c.id + ':' + t); }); save(); if (before.d < before.av) { gain(25, a); Confetti.burst(90); award('ch1'); checkBook(c.book); } toast('بارك الله فيك — سُجّلت مراجعة الباب'); render(); }
+  else if (act === 'doneall') { const before = chProgress(c); S.on.forEach(t => { if (hasText(c.passages[t])) done.add(c.id + ':' + t); }); save(); logAct(2); hap([12, 40, 12]); if (before.d < before.av) { gain(25, a); Confetti.burst(90); award('ch1'); checkBook(c.book); } toast('بارك الله فيك — سُجّلت مراجعة الباب'); render(); }
   else if (act === 'clearhl') { HL = ''; render(); }
   else if (act === 'bm') { const k = c.id + ':' + tid; bm.has(k) ? bm.delete(k) : bm.add(k); save(); a.classList.toggle('on', bm.has(k)); pop(a); toast(bm.has(k) ? 'أُضيف إلى المحفوظات' : 'أُزيل من المحفوظات'); }
-  else if (act === 'done') { const k = c.id + ':' + tid; const was = done.has(k); was ? done.delete(k) : done.add(k); save(); if (!was) { gain(5, a); award('ch1'); checkBook(c.book); } a.classList.toggle('on', !was); pop(a);
+  else if (act === 'done') { const k = c.id + ':' + tid; const was = done.has(k); was ? done.delete(k) : done.add(k); save(); if (!was) { gain(5, a); award('ch1'); checkBook(c.book); logAct(); hap(12); } a.classList.toggle('on', !was); pop(a);
     const p = chProgress(c); const r = $('.chaphead .ring'); if (r) { r.style.setProperty('--p', p.pct); $('b', r).textContent = ar(p.d) + '/' + ar(p.av); } }
   else if (act === 'copyone') copy(passageText(c, tid, true));
   else if (act === 'more') a.closest('.card').classList.toggle('collapsed');
@@ -416,8 +423,8 @@ function srcLabel(u, i) { return /shamela/.test(u) ? 'ص' + ar(u.split('/').pop(
 function card(c, tid, idx) {
   const p = c.passages[tid], t = T[tid], k = c.id + ':' + tid;
   const head = `<div class="chead">${badge(tid)}<div class="meta"><h3>${t.name}</h3><div class="bk">${esc(t.book)}</div><span class="pill ${p.status}">${ST_SHORT[p.status]} ${ST_LABEL[p.status]}</span></div>
-    <div class="cacts">${hasText(p) ? `<button class="ib ${bm.has(k) ? 'on' : ''}" data-act="bm" data-t="${tid}" title="حفظ" aria-label="حفظ">${I.star}</button><button class="ib ${done.has(k) ? 'on' : ''}" data-act="done" data-t="${tid}" title="تمت مراجعته" aria-label="تمت مراجعته">${I.check}</button><button class="ib" data-act="speak" data-t="${tid}" title="استماع" aria-label="استماع">${I.play}</button><button class="ib" data-act="copyone" data-t="${tid}" title="نسخ" aria-label="نسخ">${I.copy}</button>` : ''}</div></div>`;
-  if (!hasText(p)) return `<article class="card flip-in" id="card-${tid}" style="--c:var(--c-${tid});--i:${idx}">${head}<div class="absent-box"><span class="glyph">۞</span>${esc(p.note || ST_LABEL[p.status])}</div><div class="cfoot">${p.sources.map(u => `<a href="${u}" target="_blank" rel="noopener">فهرس المصدر ↗</a>`).join(' ')}</div></article>`;
+    <div class="cacts">${hasText(p) ? `<button class="ib ${bm.has(k) ? 'on' : ''}" data-act="bm" data-t="${tid}" title="حفظ" aria-label="حفظ">${I.star}</button><button class="ib ${done.has(k) ? 'on' : ''}" data-act="done" data-t="${tid}" title="تمت مراجعته" aria-label="تمت مراجعته">${I.check}</button><button class="ib" data-act="speak" data-t="${tid}" title="استماع" aria-label="استماع">${I.play}</button><button class="ib" data-act="copyone" data-t="${tid}" title="نسخ" aria-label="نسخ">${I.copy}</button><button class="ib ${NOTES[k] ? 'on' : ''}" data-act="note" data-t="${tid}" title="ملاحظتي على هذا النص" aria-label="ملاحظة">✎</button>` : ''}</div></div>`;
+  if (!hasText(p)) return `<article class="card flip-in is-absent" id="card-${tid}" style="--c:var(--c-${tid});--i:${idx}">${head}<div class="absent-box"><span class="glyph">۞</span>${esc(p.note || ST_LABEL[p.status])}</div><div class="cfoot">${p.sources.map(u => `<a href="${u}" target="_blank" rel="noopener">فهرس المصدر ↗</a>`).join(' ')}</div></article>`;
   let body = p.note ? `<div class="cnote">${esc(p.note)}</div>` : '';
   let total = 0;
   p.sections.forEach((sec, si) => {
@@ -427,21 +434,23 @@ function card(c, tid, idx) {
       total += (it.t || it.a || '').length + (it.b || '').length;
       const ex = `<button class="vt" data-act="explain" data-t="${tid}" data-si="${si}" data-ii="${ii}" title="شرح آلي مبسّط">✦ اشرح</button>`;
       const src = `<a class="psrc vt" href="${it.src}" target="_blank" rel="noopener">المصدر ↗</a>`;
+      const ik = c.id + ':' + tid + ':' + si + ':' + ii, hlc = HLS.has(ik) ? ' hl' : '', nm = NOTES[ik] ? '<span class="nmark" title="لك ملاحظة هنا">✎</span>' : '', sm = SRS[ik] ? '<span class="nmark" title="في بطاقات التكرار">🔁</span>' : '';
       if (it.kind === 'h') body += `<div class="h">${esc(it.t)}</div>`;
       else if (it.kind === 'v') {
         const tags = [];
         if (it.check === '2') tags.push(`<a class="vt ok" href="${it.cross || it.cross2}" target="_blank" rel="noopener" title="وُجد البيت في مصدر ثانٍ">مقابَل ✓</a>`);
         else if (it.check === '1') tags.push(`<span class="vt one" title="لم يُطابَق آليًا على مصدر ثانٍ">مصدر واحد</span>`);
         if (it.cross2 && it.cross) tags.push(`<a class="vt ok" href="${it.cross2}" target="_blank" rel="noopener">محظرة ✓</a>`);
+        if (it.alt) tags.push(`<a class="vt patch" href="${it.alt.src}" target="_blank" rel="noopener" title="${esc(it.alt.t)}">رواية ميارة: ${esc(it.alt.t)}</a>`);
         if (it.patch) tags.push(`<a class="vt patch" href="${it.patch.src}" target="_blank" rel="noopener">شطر من شرح ميارة</a>`);
         const hideB = S.mem === 'half' || S.mem === 'all', hideA = S.mem === 'all';
-        body += `<div class="verse" data-say="${esc(it.a + '، ' + (it.b || ''))}"><span class="n">${it.n ? ar(it.n) : ''}</span><span class="a ${hideA ? 'mh' : ''}">${fmt(it.a)}</span><span class="b ${hideB ? 'mh' : ''}">${fmt(it.b || '')}</span><span class="tags">${tags.join('')}${ex}${src}</span></div>`;
+        body += `<div class="verse${hlc}" data-ik="${ik}" data-say="${esc(it.a + '، ' + (it.b || ''))}"><span class="n">${it.n ? ar(it.n) : ''}</span><span class="a ${hideA ? 'mh' : ''}">${fmt(it.a)}</span><span class="b ${hideB ? 'mh' : ''}">${fmt(it.b || '')}</span><span class="tags">${nm}${sm}${tags.join('')}${ex}${src}</span></div>`;
       } else {
         let inner;
         if (S.mem === 'half') { const w = it.t.split(/\s+/); const h = Math.ceil(w.length / 2); inner = esc(w.slice(0, h).join(' ')) + ' <span class="mh">' + esc(w.slice(h).join(' ')) + '</span>'; }
         else if (S.mem === 'all') inner = `<span class="mh">${esc(it.t)}</span>`;
         else inner = fmt(it.t);
-        body += `<p data-say="${esc(it.t)}">${inner} ${ex}${src}</p>`;
+        body += `<p class="${hlc.trim()}" data-ik="${ik}" data-say="${esc(it.t)}">${inner} ${nm}${sm}${ex}${src}</p>`;
       }
     });
     body += '</div>';
@@ -449,6 +458,7 @@ function card(c, tid, idx) {
   const long = total > 2600 && S.layout !== 'compact' && !HL && !S.cmp;
   const nsrc = p.sources.length;
   return `<article class="card flip-in ${long ? 'collapsed' : ''}" id="card-${tid}" style="--c:var(--c-${tid});--i:${idx}">${head}<div class="cbody">${body}</div>${long ? `<button class="more" data-act="more">إظهار / طي النص كاملًا ▾</button>` : ''}
+    ${p.sharh ? `<div class="sharh"><b>شرح الباب:</b> ${p.sharh.map(x => `<a href="${x.url}" target="_blank" rel="noopener" title="${esc(x.title)}">${esc(x.book)} ↗</a>`).join(' · ')}</div>` : ''}
     <div class="cfoot"><b>الطبعة/المصدر:</b> ${esc(t.edition)}<br><b>صفحات المصدر (${ar(nsrc)}):</b> ${p.sources.slice(0, 12).map((u, i) => `<a href="${u}" target="_blank" rel="noopener">${srcLabel(u, i)}</a>`).join(' · ')}${nsrc > 12 ? ' …' : ''}</div></article>`;
 }
 function prevNext(c) {
@@ -483,6 +493,7 @@ const Speech = (() => {
 
 /* ---------- AI client ---------- */
 async function ai(mode, body) {
+  if (!navigator.onLine) throw new Error('أنت غير متصل بالإنترنت الآن — المساعد ✦ يحتاج اتصالًا. أما المتون والمراجعة والمكتبة وخطتك فتعمل دون اتصال.');
   const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 45000);
   try {
     const r = await fetch(AI_URL + '/' + mode, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal });
@@ -513,19 +524,20 @@ async function aiCompare(c) {
 /* ---------- AI view ---------- */
 let CHAT = LS.get('chat', []);
 function renderAI(app) {
-  const sug = ['ما فرائض الوضوء؟', 'متى يكون سجود السهو قبل السلام؟', 'ما شروط وجوب الجمعة؟', 'كم نصاب زكاة الغنم؟', 'ما أركان الحج؟', 'ما مبطلات التيمم؟'];
+  const sug = AICH ? ['لخّص أهم مسائل هذا الباب', 'ما الذي اتفقت عليه المتون في هذا الباب؟', 'ما الشروط المذكورة في هذا الباب؟'] : ['ما فرائض الوضوء؟', 'متى يكون سجود السهو قبل السلام؟', 'ما أركان النكاح؟', 'ما شروط السلم؟', 'كم نصاب زكاة الغنم؟', 'ما حكم الأضحية؟', 'من يرث النصف؟'];
   app.innerHTML = `<div class="ai-wrap">
     <div class="panel ai-hero reveal"><div class="ai-orb"></div><div><h2 class="title" style="font-size:clamp(22px,4vw,30px)">المساعد ✦</h2><p class="sub">يجيب من نصوص المتون الخمسة في هذا الموقع فقط، ويذكر لكل معلومة رمز المتن ورابط مصدرها، ويصرّح إذا لم تغطِّ المتون السؤال.</p></div></div>
     <div class="disc reveal">⚠️ ${DISC}</div>
+    ${AICH && CH[AICH] ? `<div class="note">الأسئلة مقيّدة بنصوص «${esc(CH[AICH].title)}» (وإن لم تكفِ بحث المساعد في بقية الأبواب). <button class="btn sm ghost" id="aichClear">إلغاء التقييد</button> <a href="#read/${AICH}" data-goch="${AICH}">العودة إلى الباب</a></div>` : `<div class="hint" style="margin:6px 0">نصيحة: من صفحة أي باب اضغط «اسأل عن هذا الباب» لتقييد الأسئلة به.</div>`}
     <div class="sugg">${sug.map(s => `<button class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join('')}</div>
     <div class="chat" id="chat">${CHAT.map(m => msgHTML(m)).join('')}</div>
-    <div class="askbar panel"><textarea id="askq" rows="1" maxlength="300" placeholder="اكتب سؤالك عن العبادات في هذه المتون…"></textarea><button class="btn primary" id="askbtn">${I.spark} اسأل</button></div>
+    <div class="askbar panel"><textarea id="askq" rows="1" maxlength="300" placeholder="${AICH && CH[AICH] ? 'سؤالك عن ' + esc(CH[AICH].title) + '…' : 'اكتب سؤالك عن مسائل هذه المتون…'}"></textarea><button class="btn primary" id="askbtn">${I.spark} اسأل</button></div>
     ${CHAT.length ? '<p style="text-align:center"><button class="btn sm ghost" id="clearchat">مسح المحادثة</button></p>' : ''}
   </div>`;
   const ta = $('#askq'); ta.oninput = () => { ta.style.height = 'auto'; ta.style.height = Math.min(140, ta.scrollHeight) + 'px'; };
   ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(ta.value); } };
   $('#askbtn').onclick = () => ask(ta.value);
-  app.onclick = e => { const q = e.target.closest('[data-q]'); if (q) ask(q.dataset.q); const g = e.target.closest('[data-goch]'); if (g) { e.preventDefault(); goChapter(g.dataset.goch); } if (e.target.id === 'clearchat') { CHAT = []; LS.set('chat', CHAT); render(); } };
+  app.onclick = e => { const q = e.target.closest('[data-q]'); if (q) ask(q.dataset.q); const g = e.target.closest('[data-goch]'); if (g) { e.preventDefault(); goChapter(g.dataset.goch); } if (e.target.id === 'clearchat') { CHAT = []; LS.set('chat', CHAT); render(); } if (e.target.id === 'aichClear') { AICH = null; render(); } };
 }
 function msgHTML(m) {
   if (m.me) return `<div class="msg me">${esc(m.q)}</div>`;
@@ -540,7 +552,7 @@ async function ask(q) {
   chat.insertAdjacentHTML('beforeend', `<div class="msg bot" id="pending"><span class="lab">يبحث في المتون…</span><span class="typing"><span></span><span></span><span></span></span></div>`);
   $('.ai-orb').classList.add('think'); $('#pending').scrollIntoView({ behavior: 'smooth', block: 'center' });
   let m;
-  try { const j = await ai('ask', { q }); m = { answer: j.answer, sources: j.sources, covered: j.covered }; award('ai'); }
+  try { const j = await ai('ask', AICH ? { q, ch: AICH } : { q }); m = { answer: j.answer, sources: j.sources, covered: j.covered }; award('ai'); }
   catch (e) { m = { err: e.message }; }
   asking = false;
   if (!$('#pending')) { CHAT.push(m); LS.set('chat', CHAT.slice(-20)); return; }
@@ -723,11 +735,246 @@ function doSearch(q) {
   out.innerHTML = res.length ? `<p class="hint">${ar(res.length)}${res.length > 120 ? '+' : ''} نتيجة</p>` + res.map(r => { const a = Math.max(0, r.i - 60); return `<button class="res" data-ch="${r.c.id}" style="--c:var(--c-${r.t})"><span class="meta"><b>${T[r.t].sym}</b>${T[r.t].name} · ${esc(r.c.title)}</span><span>${a ? '…' : ''}${esc(r.s.slice(a, r.i))}<mark>${esc(r.s.substr(r.i, r.l))}</mark>${esc(r.s.slice(r.i + r.l, r.i + r.l + 80))}…</span></button>`; }).join('') : '<p class="hint">لا نتائج.</p>';
 }
 
+/* ================= v3: أدوات الطالب والتطبيق ================= */
+let LIB = null;
+let HLS = new Set(LS.get('hls', []));            // تظليل الفقرات (مفتاح: باب:متن:قسم:فقرة)
+let NOTES = LS.get('notes', {});                  // ملاحظات شخصية {مفتاح: {t, at}}
+let SRS = LS.get('srs', {});                      // بطاقات التكرار المتباعد SM-2
+let ACT = LS.get('act', {});                      // سجل النشاط اليومي
+let PLAN = Object.assign({ scope: 'all', per: 2, start: '' }, LS.get('plan', {}));
+let AICH = null;
+S.hap = LS.get('hap', true);                                  // تقييد المساعد بباب
+const save3 = () => { LS.set('hls', [...HLS]); LS.set('notes', NOTES); LS.set('srs', SRS); LS.set('act', ACT); LS.set('plan', PLAN); };
+function hap(p) { try { if (S.hap !== false && navigator.vibrate) navigator.vibrate(p); } catch {} }
+function logAct(n = 1) { const d = todayStr(); ACT[d] = (ACT[d] || 0) + n; const ks = Object.keys(ACT).sort(); while (ks.length > 120) delete ACT[ks.shift()]; save3(); }
+const addDays = (d, n) => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + n); return x.toLocaleDateString('en-CA'); };
+function itemAt(ik) { const [c, t, si, ii] = ik.split(':'); const p = CH[c] && CH[c].passages[t]; const it = p && p.sections[+si] && p.sections[+si].items[+ii]; return it ? { c: CH[c], t, it } : null; }
+const itemText = it => it.kind === 'v' ? it.a + (it.b ? ' … ' + it.b : '') : it.t;
+function download(name, text, type = 'text/plain') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type + ';charset=utf-8' })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400); }
+
+/* ---- SM-2 ---- */
+function srsAdd(ik) { if (SRS[ik]) return false; const x = itemAt(ik); if (!x) return false; SRS[ik] = { e: 2.5, n: 0, i: 0, due: todayStr(), add: todayStr(), s: itemText(x.it).slice(0, 400) }; save3(); return true; }
+function srsRate(ik, q) {
+  const c = SRS[ik]; if (!c) return;
+  if (q < 3) { c.n = 0; c.i = 1; } else { c.n++; c.i = c.n === 1 ? 1 : c.n === 2 ? 6 : Math.round(c.i * c.e); }
+  c.e = Math.max(1.3, +(c.e + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)).toFixed(2));
+  c.due = addDays(todayStr(), q < 3 ? 0 : c.i); c.last = todayStr(); save3(); logAct();
+}
+const srsDue = () => Object.keys(SRS).filter(k => SRS[k].due <= todayStr()).sort((a, b) => SRS[a].due < SRS[b].due ? -1 : 1);
+
+/* ---- شريط أدوات الفقرة (تظليل/بطاقة/ملاحظة/نسخ/شرح) ---- */
+function itemBar(el, c) {
+  closeItemBar(); const ik = el.dataset.ik; if (!ik) return;
+  $$('.ik-sel').forEach(x => x.classList.remove('ik-sel')); el.classList.add('ik-sel');
+  const b = document.createElement('div'); b.className = 'ibar'; b.id = 'ibar';
+  b.innerHTML = `<button data-ia="hl">${HLS.has(ik) ? '✕ إزالة التظليل' : '🖍 تظليل'}</button><button data-ia="srs">${SRS[ik] ? '✓ في بطاقاتي' : '＋ بطاقة مراجعة'}</button><button data-ia="note">✎ ${NOTES[ik] ? 'ملاحظتي' : 'ملاحظة'}</button><button data-ia="copy">${I.copy}</button><button data-ia="ex">✦</button>`;
+  document.body.appendChild(b);
+  const r = el.getBoundingClientRect(); const w = Math.min(b.offsetWidth, innerWidth - 16);
+  b.style.top = (scrollY + Math.max(r.top - b.offsetHeight - 8, 60)) + 'px'; b.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  hap(8);
+  b.onclick = e => { const a = e.target.closest('[data-ia]'); if (!a) return; e.stopPropagation(); const act = a.dataset.ia; const [, tid, si, ii] = ik.split(':');
+    if (act === 'hl') { HLS.has(ik) ? HLS.delete(ik) : HLS.add(ik); save3(); el.classList.toggle('hl', HLS.has(ik)); hap(12); toast(HLS.has(ik) ? 'ظُلّلت الفقرة' : 'أُزيل التظليل'); }
+    else if (act === 'srs') { if (srsAdd(ik)) { hap(15); toast('أُضيفت إلى بطاقات التكرار المتباعد — تجدها في «خطتي»'); } else toast('موجودة في بطاقاتك'); }
+    else if (act === 'note') noteSheet(ik, el);
+    else if (act === 'copy') { const x = itemAt(ik); copy(itemText(x.it) + `\n— ${T[tid].sym} ${T[tid].name}، ${x.c.title}\n${x.it.src}`); }
+    else if (act === 'ex') aiExplain(c, tid, +si, +ii);
+    closeItemBar(); };
+}
+function closeItemBar() { const b = $('#ibar'); if (b) b.remove(); $$('.ik-sel').forEach(x => x.classList.remove('ik-sel')); }
+document.addEventListener('click', e => { if ($('#ibar') && !e.target.closest('#ibar,[data-ik]')) closeItemBar(); });
+function noteSheet(key, el) {
+  const x = key.split(':').length === 4 ? itemAt(key) : null; const [cid, tid] = key.split(':');
+  const head = x ? `<div class="qtext txt" style="font-size:.95em">${esc(itemText(x.it).slice(0, 400))}</div>` : '';
+  aiSheet(`<h3>✎ ملاحظتي — ${T[tid] ? T[tid].sym + ' ' + T[tid].name : ''} · ${esc(CH[cid] ? CH[cid].title : '')}</h3>${head}
+    <textarea id="noteTa" class="out" rows="6" placeholder="اكتب فائدة أو سؤالًا أو تقييدًا لنفسك… (تُحفظ في متصفحك فقط)">${esc(NOTES[key] ? NOTES[key].t : '')}</textarea>
+    <div class="actions"><button class="btn primary" id="noteSave">حفظ</button>${NOTES[key] ? '<button class="btn ghost" id="noteDel">حذف</button>' : ''}</div><p class="hint">الملاحظات شخصية وليست من المتن. يمكنك تصديرها كلها من «خطتي ← ملاحظاتي».</p>`);
+  setTimeout(() => $('#noteTa') && $('#noteTa').focus(), 80);
+  $('#noteSave').onclick = () => { const v = $('#noteTa').value.trim(); if (v) NOTES[key] = { t: v, at: todayStr() }; else delete NOTES[key]; save3(); $('#aiSheet').hidden = true; hap(12); toast(v ? 'حُفظت الملاحظة ✓' : 'حُذفت الملاحظة'); if (S.view === 'read' || S.view === 'study') render(); };
+  const d = $('#noteDel'); if (d) d.onclick = () => { delete NOTES[key]; save3(); $('#aiSheet').hidden = true; toast('حُذفت الملاحظة'); if (S.view === 'read' || S.view === 'study') render(); };
+}
+function notesExport() {
+  let s = `# ملاحظاتي — المقارِن الفقهي المالكي\n(فكرة وإعداد: ${CREDIT_NAME})\nتاريخ التصدير: ${todayStr()}\n\n`;
+  const keys = Object.keys(NOTES).sort((a, b) => DB.chapters.findIndex(c => c.id === a.split(':')[0]) - DB.chapters.findIndex(c => c.id === b.split(':')[0]));
+  for (const k of keys) { const [cid, tid] = k.split(':'); const x = itemAt(k); s += `## ${CH[cid] ? CH[cid].title : cid} — ${T[tid] ? T[tid].sym + ' ' + T[tid].name : ''}\n`; if (x) s += `> ${itemText(x.it)}\n> المصدر: ${x.it.src}\n`; s += `\n${NOTES[k].t}\n\n`; }
+  const hl = [...HLS].map(itemAt).filter(Boolean); if (hl.length) { s += `# الفقرات المظلّلة (${hl.length})\n\n`; for (const x of hl) s += `- [${T[x.t].sym}] ${x.c.title}: ${itemText(x.it)}\n  ${x.it.src}\n`; }
+  download('ملاحظاتي-المقارن-المالكي.md', s, 'text/markdown');
+}
+function progressExport() { const o = { app: 'maliki-fiqh', v: 3, at: new Date().toISOString(), data: {} }; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('mfq.')) o.data[k] = localStorage.getItem(k); } download('تقدمي-المقارن-المالكي.json', JSON.stringify(o), 'application/json'); toast('صُدّر ملف التقدّم ✓'); }
+function progressImport() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = async () => { try { const o = JSON.parse(await inp.files[0].text()); if (o.app !== 'maliki-fiqh' || !o.data) throw 0; if (!confirm('استيراد هذا الملف سيستبدل تقدّمك الحالي على هذا الجهاز. متابعة؟')) return; Object.entries(o.data).forEach(([k, v]) => k.startsWith('mfq.') && localStorage.setItem(k, v)); toast('تم الاستيراد — يُعاد التحميل'); setTimeout(() => location.reload(), 700); } catch { toast('الملف غير صالح'); } };
+  inp.click();
+}
+
+/* ---------- LIBRARY (المكتبة) ---------- */
+let LIBT = 'akhdari', LIBTAB = 'path';
+async function loadLib() { if (LIB) return LIB; try { const r = await fetch('data/library.json?v=' + APPV); LIB = await r.json(); } catch { LIB = null; } return LIB; }
+function renderLibrary(app) {
+  if (!LIB) { app.innerHTML = `<div class="panel" style="padding:20px">${thinking('تحميل المكتبة…')}</div>`; loadLib().then(() => { if (S.view === 'library') render(); else if (!LIB) toast('تعذّر تحميل المكتبة'); }); if (!LIB && !navigator.onLine) app.innerHTML = '<div class="note">المكتبة غير محفوظة بعد على هذا الجهاز وأنت غير متصل.</div>'; return; }
+  const tabs = [['path', 'التدرّج'], ['bio', 'الترجمة'], ['shuruh', 'الشروح'], ['pdf', 'نسخ PDF'], ['audio', 'دروس صوتية']].concat(LIBT === 'khalil' ? [['gloss', 'اصطلاح خليل']] : []);
+  if (!tabs.some(t => t[0] === LIBTAB)) LIBTAB = 'path';
+  const L = LIB.links[LIBT] || {}, t = T[LIBT];
+  const linkList = arr => arr && arr.length ? `<div class="links">${arr.map(x => `<a class="lk panel" href="${x.url}" target="_blank" rel="noopener"><b>${esc(x.title)}</b>${x.by ? `<span>${esc(x.by)}</span>` : ''}<small>${esc(x.site)}${x.files ? ` · ${ar(x.files)} ملفًا صوتيًا` : ''} ↗</small></a>`).join('')}</div>` : '<p class="hint">لم نجد روابط موثّقة لهذا القسم.</p>';
+  let body = '';
+  if (LIBTAB === 'path') {
+    body = `<p class="sub">ترتيب المتون كما في نبذة المُعِدّ: «وفق التدرج المعروف في دراسة المذهب».</p><ol class="path">${ORDER.map((id, i) => { const n = DB.chapters.filter(c => hasText(c.passages[id])).length; const pr = DB.chapters.filter(c => hasText(c.passages[id])); const d = pr.filter(c => done.has(c.id + ':' + id)).length;
+      return `<li class="pstep panel reveal" style="--c:var(--c-${id})"><span class="pnum">${ar(i + 1)}</span>${badge(id)}<div class="px"><b>${T[id].name} — ${esc(T[id].book)}</b><small>${esc(T[id].type)} · حاضر في ${ar(n)} بابًا · راجعتَ ${ar(d)}</small><div class="xpbar"><i style="width:${n ? Math.round(100 * d / n) : 0}%"></i></div></div><button class="btn sm" data-solo="${id}">اقرأه وحده</button></li>`; }).join('')}</ol>
+      <p class="hint">«اقرأه وحده» يعرض هذا المتن منفردًا في القراءة؛ ويمكنك إعادة المتون الأخرى من أزرار الرموز أعلى الباب.</p>`;
+  } else if (LIBTAB === 'bio') {
+    const B = LIB.bios[LIBT];
+    body = (B ? `<div class="panel bioL"><h3>${esc(B.title)}</h3><p class="hint">${esc(B.from)} — نص منقول حرفيًا.</p>${B.paras.map(p => `<p>${esc(p.t)} <a class="psrc vt" href="${p.src}" target="_blank" rel="noopener">ص${ar(p.src.split('/').pop())} ↗</a></p>`).join('')}</div>` : '<p class="hint">لا توجد ترجمة موسّعة منقولة لهذا المؤلف في مصادرنا المحفوظة؛ نعرض مقتطف ويكيبيديا.</p>')
+      + (t.bio ? `<div class="panel bioL"><h3>مقتطف من ويكيبيديا العربية</h3><blockquote>${esc(t.bio.text)}</blockquote><a href="${t.bio.perma || t.bio.url}" target="_blank" rel="noopener">المصدر ↗</a></div>` : '');
+  } else if (LIBTAB === 'gloss') {
+    const g = LIB.glossary;
+    body = `<div class="panel bioL"><h3>${esc(g.title)}</h3><p class="hint">${esc(g.note)}</p><ul class="gloss">${g.items.map(x => `<li>${fmt(x.t)} <a class="psrc vt" href="${x.src}" target="_blank" rel="noopener">المصدر ↗</a></li>`).join('')}</ul>
+      <details><summary>النص الكامل للفقرتين</summary>${g.full.map(x => `<p class="txt">${esc(x.t)} <a class="vt" href="${x.src}" target="_blank" rel="noopener">↗</a></p>`).join('')}</details></div>`;
+  } else body = linkList(L[LIBTAB]) + (LIBTAB === 'shuruh' ? '<p class="hint">ولكل باب في القراءة رابط «شرح الباب» إلى موضعه في الشرح حيث أمكن ضبطه من فهرس الشرح.</p>' : '');
+  app.innerHTML = `<div class="lib">
+    <div class="panel frame reveal" style="padding:16px"><svg class="cn a"><use href="#corner"/></svg><svg class="cn b"><use href="#corner"/></svg><svg class="cn c"><use href="#corner"/></svg><svg class="cn d"><use href="#corner"/></svg>
+      <h2 class="title" style="font-size:clamp(22px,4vw,30px)">المكتبة</h2><p class="sub">تراجم المؤلفين وشروح المتون ونسخها ودروسها الصوتية — روابط خارجية تحقّقنا من عناوينها وأصحابها عند الإعداد (المكتبة الشاملة وأرشيف الإنترنت)، ومحتواها مسؤولية ناشريها.</p>
+      <div class="symbols">${ORDER.map(id => `<button class="sym ${id === LIBT ? '' : 'off'}" data-lt="${id}" style="--c:var(--c-${id})">${badge(id)}<span>${T[id].name}</span></button>`).join('')}</div>
+      <div class="modes" style="margin-top:10px">${tabs.map(([k, l]) => `<button class="chip ${k === LIBTAB ? 'on' : ''}" data-ltab="${k}">${l}</button>`).join('')}</div></div>
+    <div class="libbody">${body}</div></div>`;
+  app.onclick = e => {
+    const a = e.target.closest('[data-lt]'); if (a) { LIBT = a.dataset.lt; hap(6); return render(); }
+    const b = e.target.closest('[data-ltab]'); if (b) { LIBTAB = b.dataset.ltab; hap(6); return render(); }
+    const s = e.target.closest('[data-solo]'); if (s) { const id = s.dataset.solo; S.on = [id]; const c = DB.chapters.find(c => hasText(c.passages[id]) && !done.has(c.id + ':' + id)) || DB.chapters.find(c => hasText(c.passages[id])); save(); goChapter(c.id); }
+  };
+}
+
+/* ---------- STUDY (خطتي): خطة + تكرار متباعد + ملاحظات + إحصاءات ---------- */
+let STAB = 'plan', SRSQ = null, SRSFLIP = false;
+function planList() { return DB.chapters.filter(c => PLAN.scope === 'all' || c.book === PLAN.scope).filter(c => { const p = chProgress(c); return p.av && p.d < p.av; }); }
+function renderStudy(app) {
+  const due = srsDue(), nCards = Object.keys(SRS).length, nNotes = Object.keys(NOTES).length;
+  const tabs = [['plan', 'خطة اليوم'], ['srs', `التكرار المتباعد${due.length ? ` (${ar(due.length)})` : ''}`], ['notes', `ملاحظاتي (${ar(nNotes + HLS.size)})`], ['stats', 'الإحصاءات'], ['data', 'نسخ احتياطي']];
+  let body = '';
+  if (STAB === 'plan') {
+    const rest = planList(), per = Math.max(1, +PLAN.per || 1), days = Math.ceil(rest.length / per), fin = addDays(todayStr(), Math.max(0, days - 1));
+    body = `<div class="panel pad"><h3>خطة القراءة</h3>
+      <div class="planf"><label>النطاق <select id="plScope"><option value="all">كل الأبواب</option>${DB.meta.books.map(b => `<option value="${b.id}">${b.title}</option>`).join('')}</select></label>
+      <label>أبواب في اليوم <select id="plPer">${[1, 2, 3, 4, 5, 7, 10].map(n => `<option value="${n}">${ar(n)}</option>`).join('')}</select></label></div>
+      <p class="sub">بقي ${ar(rest.length)} بابًا غير مكتمل المراجعة في هذا النطاق${rest.length ? ` — تنتهي بإذن الله خلال ${ar(days)} يومًا (${new Date(fin + 'T12:00:00').toLocaleDateString('ar-EG-u-nu-arab', { day: 'numeric', month: 'long' })})` : ' — أتممته، بارك الله فيك 🎉'}.</p>
+      <div class="sec-h" style="margin-top:8px">أبواب اليوم</div>
+      <div class="today">${rest.slice(0, per).map(c => { const p = chProgress(c); return `<button class="tday panel" data-goch="${c.id}">${ring(p.pct, 'var(--gold)', ar(p.d) + '/' + ar(p.av), 46)}<div><b>${esc(c.title)}</b><small>${esc(DB.meta.books.find(b => b.id === c.book).title)} · ${esc(c.sub)}</small></div><span>←</span></button>`; }).join('') || '<p class="hint">لا أبواب متبقية.</p>'}</div></div>
+      <div class="panel pad"><h3>بطاقات اليوم</h3><p class="sub">${due.length ? `لديك ${ar(due.length)} بطاقة مستحقة للمراجعة.` : nCards ? 'لا بطاقات مستحقة اليوم — أحسنت.' : 'لم تضف بطاقات بعد: اضغط على أي فقرة أو بيت في القراءة ثم «＋ بطاقة مراجعة».'}</p>${due.length ? '<button class="btn primary" data-stab="srs">ابدأ المراجعة</button>' : ''}</div>`;
+  } else if (STAB === 'srs') {
+    if (!SRSQ || !SRS[SRSQ] || SRS[SRSQ].due > todayStr()) { SRSQ = due[0] || null; SRSFLIP = false; }
+    if (!SRSQ) body = `<div class="panel pad"><h3>التكرار المتباعد</h3><p class="sub">${nCards ? 'لا بطاقات مستحقة الآن. موعد أقرب بطاقة: ' + ar(Object.values(SRS).map(c => c.due).sort()[0] || '') : 'أضف بطاقات من القراءة: اضغط على فقرة أو بيت ثم «＋ بطاقة مراجعة».'}</p><p class="hint">نظام SM-2: كل بطاقة تعود إليك بعد مدة تطول كلما أجبت عنها جيدًا، وتقصر إذا نسيتها.</p></div>`;
+    else { const x = itemAt(SRSQ), cd = SRS[SRSQ]; const txt = x ? itemText(x.it) : cd.s; const w = txt.split(/\s+/); const h = Math.max(2, Math.ceil(w.length * .45));
+      body = `<div class="panel pad srs"><div class="hint">${x ? `${badge(x.t, 'sm')} ${T[x.t].name} · ${esc(x.c.title)}` : ''} · بطاقة ${ar(due.indexOf(SRSQ) + 1)}/${ar(due.length)} · تكرار ${ar(cd.n)}</div>
+        <div class="qtext txt">${esc(w.slice(0, h).join(' '))} ${SRSFLIP ? esc(w.slice(h).join(' ')) : '<span class="blank">… (استحضر التتمة)</span>'}</div>
+        ${SRSFLIP ? `<div class="rate"><button class="btn" data-q="1">نسيتها<small>اليوم</small></button><button class="btn" data-q="3">صعبة<small>${ar(cd.n === 0 ? 1 : cd.n === 1 ? 6 : Math.round(cd.i * cd.e))} ي</small></button><button class="btn primary" data-q="4">جيدة<small>${ar(cd.n === 0 ? 1 : cd.n === 1 ? 6 : Math.round(cd.i * cd.e))} ي</small></button><button class="btn" data-q="5">سهلة<small>${ar(cd.n === 0 ? 1 : cd.n === 1 ? 6 : Math.round(cd.i * (cd.e + .15)))} ي</small></button></div>` : '<button class="btn primary wide" data-flip>أظهر التتمة</button>'}
+        ${x ? `<p class="hint"><a href="${x.it.src}" target="_blank" rel="noopener">المصدر ↗</a> · <a href="#read/${x.c.id}" data-goch="${x.c.id}">افتح الباب</a> · <button class="linkbtn" data-unsrs="${SRSQ}">حذف البطاقة</button></p>` : ''}</div>`; }
+  } else if (STAB === 'notes') {
+    const nk = Object.keys(NOTES), hk = [...HLS].filter(k => itemAt(k));
+    body = `<div class="panel pad"><div class="actions" style="justify-content:space-between"><h3 style="margin:0">ملاحظاتي (${ar(nk.length)})</h3>${nk.length || hk.length ? '<button class="btn sm" id="nExp">تصدير الملاحظات والتظليل (Markdown)</button>' : ''}</div>
+      ${nk.length ? nk.map(k => { const [cid, tid] = k.split(':'); const x = itemAt(k); return `<div class="nitem" style="--c:var(--c-${tid})">${T[tid] ? badge(tid, 'sm') : ''}<div><b>${esc(CH[cid] ? CH[cid].title : cid)}</b>${x ? `<small class="txt">${esc(itemText(x.it).slice(0, 160))}…</small>` : ''}<p>${esc(NOTES[k].t)}</p><small><a href="#read/${cid}" data-goch="${cid}">افتح الباب</a> · <button class="linkbtn" data-enote="${k}">تعديل</button> · ${ar(NOTES[k].at || '')}</small></div></div>`; }).join('') : '<p class="hint">اضغط على أي فقرة في القراءة ثم «✎ ملاحظة»، أو زر ✎ في رأس بطاقة المتن.</p>'}</div>
+      <div class="panel pad"><h3>الفقرات المظلّلة (${ar(hk.length)})</h3>${hk.length ? hk.map(k => { const x = itemAt(k); return `<div class="nitem hlx" style="--c:var(--c-${x.t})">${badge(x.t, 'sm')}<div><b>${esc(x.c.title)}</b><p class="txt">${esc(itemText(x.it).slice(0, 260))}</p><small><a href="#read/${x.c.id}" data-goch="${x.c.id}">افتح الباب</a> · <button class="linkbtn" data-unhl="${k}">إزالة</button></small></div></div>`; }).join('') : '<p class="hint">لا فقرات مظلّلة بعد.</p>'}</div>`;
+  } else if (STAB === 'stats') {
+    const pr = progressPct(), lv = level(); const days = Array.from({ length: 14 }, (_, i) => addDays(todayStr(), i - 13)); const mx = Math.max(1, ...days.map(d => ACT[d] || 0));
+    const mastered = Object.values(SRS).filter(c => c.i >= 21).length;
+    body = `<div class="stats">${[[pr.pct + '٪', 'نسبة المراجعة'], [G.xp, 'نقطة'], [G.all ? Math.round(100 * G.ok / G.all) + '٪' : '—', 'دقة الإجابات'], [G.days, 'أيام متتابعة'], [nCards, 'بطاقة تكرار'], [mastered, 'بطاقة متقنة (٢١ يومًا+)'], [nNotes, 'ملاحظة'], [HLS.size, 'فقرة مظلّلة']].map(([v, l]) => `<div class="stat panel"><b>${ar(v)}</b><span>${l}</span></div>`).join('')}</div>
+      <div class="panel pad"><h3>النشاط في ١٤ يومًا</h3><div class="bars">${days.map(d => `<div class="bar" title="${d}: ${ACT[d] || 0}"><i style="height:${Math.round(100 * (ACT[d] || 0) / mx)}%"></i><small>${ar(+d.slice(8))}</small></div>`).join('')}</div></div>
+      <div class="panel pad"><h3>التقدّم حسب الكتب</h3>${DB.meta.books.map(b => { const chs = DB.chapters.filter(c => c.book === b.id); let av = 0, dd = 0; chs.forEach(c => { const p = chProgress(c); av += p.av; dd += p.d; }); const pc = av ? Math.round(100 * dd / av) : 0; return `<div class="bkrow"><span>${b.title}</span><div class="xpbar"><i style="width:${pc}%"></i></div><b>${ar(pc)}٪</b></div>`; }).join('')}</div>
+      <div class="panel pad"><h3>المرتبة</h3><p>${lv.name} — ${ar(G.xp)} / ${ar(lv.nxt)} نقطة · أفضل سلسلة ${ar(G.best)}</p></div>`;
+  } else if (STAB === 'data') {
+    body = `<div class="panel pad"><h3>نسخ احتياطي ونقل بين الأجهزة</h3><p class="sub">كل تقدّمك (المراجعة، النقاط، المحفوظات، البطاقات، الملاحظات، التظليل، الإعدادات) محفوظ في هذا المتصفح فقط. صدّره ملفًا لتنقله إلى جهاز آخر أو تحتفظ به.</p>
+      <div class="actions"><button class="btn primary" id="pExp">تصدير التقدّم (JSON)</button><button class="btn" id="pImp">استيراد ملف تقدّم</button><button class="btn" id="nExp2">تصدير الملاحظات (Markdown)</button></div></div>`;
+  }
+  app.innerHTML = `<div class="study"><div class="panel frame reveal" style="padding:16px"><svg class="cn a"><use href="#corner"/></svg><svg class="cn b"><use href="#corner"/></svg><svg class="cn c"><use href="#corner"/></svg><svg class="cn d"><use href="#corner"/></svg>
+    <h2 class="title" style="font-size:clamp(22px,4vw,30px)">خطتي</h2><p class="sub">خطة يومية، وتكرار متباعد للحفظ، وملاحظاتك، وإحصاءاتك — كلها على جهازك.</p>
+    <div class="modes">${tabs.map(([k, l]) => `<button class="chip ${k === STAB ? 'on' : ''}" data-stab="${k}">${l}</button>`).join('')}</div></div>${body}</div>`;
+  const sc = $('#plScope'); if (sc) { sc.value = PLAN.scope; $('#plPer').value = PLAN.per; sc.onchange = () => { PLAN.scope = sc.value; save3(); render(); }; $('#plPer').onchange = e => { PLAN.per = +e.target.value; save3(); render(); }; }
+  const on = (id, f) => { const el = $('#' + id); if (el) el.onclick = f; };
+  on('nExp', notesExport); on('nExp2', notesExport); on('pExp', progressExport); on('pImp', progressImport);
+  app.onclick = e => {
+    const t = e.target.closest('[data-stab]'); if (t) { STAB = t.dataset.stab; hap(6); return render(); }
+    const g = e.target.closest('[data-goch]'); if (g) { e.preventDefault(); return goChapter(g.dataset.goch); }
+    if (e.target.closest('[data-flip]')) { SRSFLIP = true; hap(8); return render(); }
+    const q = e.target.closest('[data-q]'); if (q && SRSQ) { const v = +q.dataset.q; srsRate(SRSQ, v); hap(v < 3 ? [20, 30, 20] : 12); if (v >= 3) gain(3, q); SRSQ = null; return render(); }
+    const u = e.target.closest('[data-unsrs]'); if (u) { delete SRS[u.dataset.unsrs]; save3(); SRSQ = null; toast('حُذفت البطاقة'); return render(); }
+    const h = e.target.closest('[data-unhl]'); if (h) { HLS.delete(h.dataset.unhl); save3(); return render(); }
+    const n = e.target.closest('[data-enote]'); if (n) return noteSheet(n.dataset.enote);
+  };
+}
+
+/* ---------- PWA: تثبيت، تحديث، دون اتصال ---------- */
+let DEFER = null;
+const STANDALONE = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function syncInstall() { $$('.inst').forEach(b => b.hidden = STANDALONE()); }
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); DEFER = e; syncInstall(); });
+addEventListener('appinstalled', () => { DEFER = null; syncInstall(); toast('ثُبّت التطبيق على جهازك ✓'); hap([10, 40, 10]); });
+function installApp() {
+  if (STANDALONE()) return toast('التطبيق مثبّت ويعمل الآن كتطبيق ✓');
+  if (DEFER) { DEFER.prompt(); DEFER.userChoice.finally(() => { DEFER = null; }); return; }
+  aiSheet(`<h3>📲 ثبّت «المقارن المالكي» كتطبيق</h3>
+    <div class="howto">${IOS ? `<ol><li>افتح الموقع في <b>Safari</b>.</li><li>اضغط زر المشاركة <b>⎋</b> أسفل الشاشة.</li><li>اختر <b>«إضافة إلى الشاشة الرئيسية»</b> ثم «إضافة».</li></ol>` :
+    `<ol><li>في <b>Chrome / Edge / Samsung Internet</b>: افتح القائمة <b>⋮</b>.</li><li>اختر <b>«تثبيت التطبيق»</b> أو <b>«إضافة إلى الشاشة الرئيسية»</b>.</li><li>على الحاسوب: اضغط أيقونة التثبيت في شريط العنوان.</li></ol>`}</div>
+    <p class="hint">بعد التثبيت يفتح بملء الشاشة بأيقونته الخاصة، ويعمل دون اتصال بالإنترنت (المتون والمراجعة والمكتبة)؛ أما المساعد ✦ فيحتاج اتصالًا.</p>`);
+}
+function swInit() {
+  if (!('serviceWorker' in navigator) || location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloading || !navigator.serviceWorker.controller) return; if (swInit.asked) { reloading = true; location.reload(); } });
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    const offer = w => { if (!navigator.serviceWorker.controller) return; const bar = $('#upd'); bar.hidden = false; $('#updGo').onclick = () => { swInit.asked = true; w.postMessage('SKIP_WAITING'); bar.innerHTML = '<span>يُحدِّث…</span>'; }; };
+    if (reg.waiting) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed') offer(w); }); });
+    setInterval(() => reg.update().catch(() => {}), 3600e3);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+  }).catch(() => {});
+}
+addEventListener('offline', () => { document.documentElement.classList.add('offline'); toast('أنت غير متصل — المتون والمراجعة تعمل من النسخة المحفوظة'); });
+addEventListener('online', () => { document.documentElement.classList.remove('offline'); toast('عاد الاتصال ✓'); });
+
+/* ---------- لوحة الأوامر (بحث سريع) ---------- */
+let PAL = [], PALI = 0;
+function palItems(q) {
+  const n = norm(q);
+  const views = [['home', 'الرئيسية', '⌂'], ['read', 'القراءة', '📖'], ['map', 'خريطة الأبواب', '✧'], ['review', 'المراجعة والأسئلة', '★'], ['study', 'خطتي: الخطة والبطاقات والملاحظات', '🗓'], ['library', 'المكتبة: الشروح والتراجم والصوتيات', '📚'], ['ai', 'المساعد ✦', '✦'], ['message', 'صانع الرسالة', '✉'], ['coverage', 'جدول التوثيق', '✓'], ['about', 'عن الموقع والمُعِدّ', 'ℹ']]
+    .map(([v, l, i]) => ({ l, i, k: 'قسم', run: () => setView(v) }));
+  const acts = [{ l: 'ثبّت التطبيق على جهازك', i: '📲', k: 'أمر', run: installApp }, { l: 'بدّل المظهر (ليلي/نهاري/ورقي)', i: '◐', k: 'أمر', run: () => $('#btnTheme').click() }, { l: 'إعدادات العرض', i: '⚙', k: 'أمر', run: () => $('#btnMenu').click() },
+    { l: 'تصدير التقدّم', i: '⤓', k: 'أمر', run: progressExport }, { l: 'تصدير ملاحظاتي', i: '✎', k: 'أمر', run: notesExport }, { l: 'بطاقات التكرار المستحقة', i: '🔁', k: 'أمر', run: () => { STAB = 'srs'; setView('study'); } }];
+  const chs = DB.chapters.map(c => ({ l: c.title, s: c.sub + ' — ' + DB.meta.books.find(b => b.id === c.book).title, i: '۞', k: 'باب', run: () => goChapter(c.id), n: norm(c.title + ' ' + c.sub) }));
+  if (!n) return [...views.slice(0, 7), ...acts.slice(0, 2), ...chs.slice(0, 6)];
+  const toks = n.split(' ');
+  const hit = x => { const h = x.n || norm(x.l + ' ' + (x.s || '')); return toks.every(t => h.includes(t) || h.split(' ').some(w => stem(w).startsWith(stem(t)))); };
+  const out = [...chs.filter(hit), ...views.filter(hit), ...acts.filter(hit)].slice(0, 14);
+  out.push({ l: `ابحث في نصوص المتون عن «${q}»`, i: '🔍', k: 'بحث', run: () => { $('#btnSearch').click(); $('#q').value = q; doSearch(q); } });
+  return out;
+}
+function openPalette() {
+  $$('.sheet').forEach(s => s.hidden = true); const sh = $('#palSheet'); sh.hidden = false; const inp = $('#palQ'); inp.value = ''; drawPal(''); setTimeout(() => inp.focus(), 50);
+}
+function drawPal(q) { PAL = palItems(q); PALI = 0; $('#palList').innerHTML = PAL.map((x, i) => `<button class="pal ${i === 0 ? 'on' : ''}" data-pi="${i}"><span class="pi">${x.i}</span><span class="pl"><b>${esc(x.l)}</b>${x.s ? `<small>${esc(x.s)}</small>` : ''}</span><em>${x.k}</em></button>`).join(''); }
+function runPal(i) { const x = PAL[i]; if (!x) return; $('#palSheet').hidden = true; hap(8); x.run(); }
+function bindV3() {
+  const inp = $('#palQ'); inp.oninput = () => drawPal(inp.value.trim());
+  inp.onkeydown = e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); PALI = (PALI + (e.key === 'ArrowDown' ? 1 : -1) + PAL.length) % PAL.length; $$('.pal').forEach((b, i) => b.classList.toggle('on', i === PALI)); $$('.pal')[PALI].scrollIntoView({ block: 'nearest' }); } if (e.key === 'Enter') { e.preventDefault(); runPal(PALI); } };
+  $('#palList').onclick = e => { const b = e.target.closest('[data-pi]'); if (b) runPal(+b.dataset.pi); };
+  $('#btnPal').onclick = openPalette;
+  $$('.inst').forEach(b => b.onclick = installApp); syncInstall();
+  addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openPalette(); } });
+  $('#moreSheet').onclick = e => { const v = e.target.closest('[data-mv]'); if (v) { $('#moreSheet').hidden = true; hap(6); setView(v.dataset.mv); return; } const a = e.target.closest('[data-ma]'); if (a) { $('#moreSheet').hidden = true; ({ install: installApp, pal: openPalette, menu: () => $('#btnMenu').click(), search: () => $('#btnSearch').click() })[a.dataset.ma](); } };
+  const ch = $('#chkHap'); if (ch) { ch.checked = S.hap !== false; ch.onchange = () => { S.hap = ch.checked; LS.set('hap', S.hap); hap(15); }; }
+  const ex = $('#btnExp'), im = $('#btnImp'); if (ex) ex.onclick = progressExport; if (im) im.onclick = progressImport;
+  if (!navigator.onLine) document.documentElement.classList.add('offline');
+}
+function homeV3HTML() {
+  const due = srsDue().length;
+  const tiles = [['read', '📖', 'القراءة المقارنة', `${ar(DB.chapters.length)} بابًا في ${ar(DB.meta.books.length)} كتب`], ['study', '🗓', 'خطتي', due ? `${ar(due)} بطاقة مستحقة` : 'خطة يومية وتكرار متباعد'], ['library', '📚', 'المكتبة', 'شروح وتراجم ونسخ ودروس صوتية'],
+    ['review', '★', 'المراجعة', 'أسئلة ومستويات وإنجازات'], ['ai', '✦', 'المساعد', 'أسئلة من نصوص المتون فقط'], ['map', '✧', 'خريطة الأبواب', 'كوكبة الأبواب وتقدّمك']];
+  return `<div class="sec-h">أقسام التطبيق</div><div class="tiles">${tiles.map(([v, i, l, s]) => `<button class="tile panel reveal" data-go="${v}"><span class="ti">${i}</span><b>${l}</b><small>${s}</small></button>`).join('')}</div>
+  ${STANDALONE() ? '' : `<div class="instcard panel reveal"><div class="ic"><img src="assets/icons/icon-192.png" alt="" width="56" height="56"></div><div><b>ثبّته كتطبيق على جوالك</b><small>يفتح بملء الشاشة من أيقونته، ويعمل دون إنترنت.</small></div><button class="btn primary inst" data-go-install>📲 ثبّت</button></div>`}`;
+}
+
 /* ---------- chrome / boot ---------- */
 function bindChrome() {
   const sheet = id => { $$('.sheet').forEach(s => s.hidden = s.id !== id || !s.hidden); };
   $('#views').onclick = e => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); };
-  $('#tabbar').onclick = e => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); };
+  $('#tabbar').onclick = e => { if (e.target.closest('[data-more]')) { hap(6); return sheet('moreSheet'); } const b = e.target.closest('[data-view]'); if (b) { hap(6); setView(b.dataset.view); } };
   $('.brand').onclick = e => { e.preventDefault(); setView('home'); };
   $('#btnMenu').onclick = () => sheet('menuSheet');
   $('#btnSearch').onclick = () => { sheet('searchSheet'); setTimeout(() => $('#q').focus(), 60); };
@@ -760,7 +1007,7 @@ function route() {
 }
 async function boot() {
   applyLook(); bindChrome();
-  try { const r = await fetch('data/fiqh.json?v=2.3'); DB = await r.json(); }
+  try { const r = await fetch('data/fiqh.json?v=' + APPV); DB = await r.json(); }
   catch { $('#app').innerHTML = '<div class="note">تعذّر تحميل البيانات. تحقّق من الاتصال ثم أعد التحميل.</div>'; return; }
   for (const t of DB.texts) T[t.id] = t; ORDER = DB.meta.order || DB.texts.map(t => t.id);
   for (const c of DB.chapters) CH[c.id] = c;
@@ -768,7 +1015,8 @@ async function boot() {
   if (!CH[S.ch]) S.ch = DB.chapters[0].id;
   $('#loader') && $('#loader').classList.add('gone');
   S.view = ''; route();
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  bindV3(); swInit();
+  setTimeout(() => loadLib(), 1500);
 }
 boot();
 })();

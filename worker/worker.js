@@ -101,8 +101,12 @@ export default {
       if (mode === 'ask') {
         const q = String(body.q || '').slice(0, 300).trim();
         if (q.length < 3) return J({ error: 'q' }, 400, origin);
-        const { out } = retrieve(db, q, 10, body.ch && db.d.chapters.some(c => c.id === body.ch) ? null : null);
-        if (!out.length || out[0].score < 1.2) { res = { covered: false, answer: 'لم أجد في نصوص المتون الخمسة المعروضة في الموقع ما يجيب عن هذا السؤال. اسأل أهل العلم.', sources: [], disclaimer: DISCLAIMER }; }
+        const onlyCh = body.ch && db.d.chapters.some(c => c.id === body.ch) ? body.ch : null;
+        let { out } = retrieve(db, q, 10, onlyCh);
+        if (onlyCh && out.length < 6) {   // per-chapter mode: always ground in the chapter's own passages (first passages of each text)
+          const per = {}; for (const c of db.chunks) { if (c.ch !== onlyCh || out.some(o => o.id === c.id)) continue; per[c.tid] = (per[c.tid] || 0) + 1; if (per[c.tid] > 2) continue; out.push({ ...c, score: 1.2 }); if (out.length >= 10) break; }
+        }
+        if (!out.length || (!onlyCh && out[0].score < 1.2)) { res = { covered: false, answer: 'لم أجد في نصوص المتون الخمسة المعروضة في الموقع ما يجيب عن هذا السؤال. اسأل أهل العلم.', sources: [], disclaimer: DISCLAIMER }; }
         else {
           const ans = await llm(env, BASE_RULES + `\n- إن لم تكف النصوص للإجابة فاكتب في أول سطر: «غير مغطّى» ثم بيّن ما وجدته فقط.\n- اذكر أيّ المتون (بالرمز: ي ع ش خ س) قال ماذا.`, `<نصوص>\n${fmt(out)}\n</نصوص>\nالسؤال: ${q}`);
           res = { covered: !/^\s*«?غير مغط/.test(ans), answer: ans, sources: srcs(out), disclaimer: DISCLAIMER };

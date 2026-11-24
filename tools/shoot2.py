@@ -3,6 +3,26 @@ from playwright.async_api import async_playwright
 BASE=sys.argv[1] if len(sys.argv)>1 else 'http://localhost:8765/'
 OUT=sys.argv[2] if len(sys.argv)>2 else 'shots2'
 CASES=[
+ ('v3-desktop-home',1440,900,'#home',{},None),
+ ('v3-desktop-library',1440,900,'#library',{},None),
+ ('v3-desktop-study',1440,900,'#study',{},None),
+ ('v3-desktop-read-nikah',1440,900,'#read/nikah',{'layout':'side'},None),
+ ('v3-mobile-home',412,900,'#home',{},None),
+ ('v3-mobile-read-buyu',412,900,'#read/buyu',{'layout':'stack'},'ibar'),
+ ('v3-mobile-aqida',412,900,'#read/aqida',{'layout':'stack'},None),
+ ('v3-mobile-tasawwuf',412,900,'#read/tasawwuf',{'layout':'stack'},None),
+ ('v3-mobile-library',412,900,'#library',{},None),
+ ('v3-mobile-study',412,900,'#study',{},None),
+ ('v3-mobile-more',412,900,'#home',{},'more'),
+ ('v3-mobile-palette',412,900,'#home',{},'pal'),
+ ('v3-mobile-ai-ch',412,900,'#read/faraid',{},'askch'),
+ ('v3-fold-home',344,882,'#home',{},None),
+ ('v3-fold-read-faraid',344,882,'#read/faraid',{'layout':'stack'},None),
+ ('v3-fold-study',344,882,'#study',{},None),
+ ('v3-fold-library',344,882,'#library',{},None),
+ ('v3-open-read-talaq',720,860,'#read/talaq',{},None),
+ ('v3-open-map',720,860,'#map',{},None),
+ ('v3-open-library',720,860,'#library',{},None),
  ('desktop-home',1440,900,'#home',{},None),
  ('desktop-map',1440,900,'#map',{},None),
  ('desktop-read-side',1440,900,'#read/wudu',{'layout':'side'},None),
@@ -38,6 +58,14 @@ async def main():
       await pg.goto(BASE+hs); await pg.wait_for_timeout(2600)
       if extra=='search':
         await pg.click('#btnSearch'); await pg.fill('#q','الدلك'); await pg.wait_for_timeout(800)
+      if extra=='ibar':
+        await pg.click('#card-risala .txt p[data-ik]'); await pg.wait_for_timeout(500)
+      if extra=='more':
+        await pg.click('#tabbar [data-more]'); await pg.wait_for_timeout(500)
+      if extra=='pal':
+        await pg.click('#btnPal'); await pg.fill('#palQ','شفعة'); await pg.wait_for_timeout(500)
+      if extra=='askch':
+        await pg.click('[data-act=askch]'); await pg.wait_for_timeout(1200)
       if extra=='answer':
         await pg.click('.opt'); await pg.wait_for_timeout(700)
       # check horizontal overflow

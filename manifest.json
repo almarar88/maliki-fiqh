@@ -1,1 +1,180 @@
-{"name":"المقارِن الفقهي المالكي","short_name":"المقارن المالكي","start_url":"./","display":"standalone","dir":"rtl","lang":"ar","background_color":"#0b1416","theme_color":"#0b1416","icons":[{"src":"assets/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{
+ "id": "/maliki-fiqh/",
+ "name": "المقارِن الفقهي المالكي — ي ع ش خ س",
+ "short_name": "المقارن المالكي",
+ "description": "خمسة متون مالكية (الأخضري، ابن عاشر، البشار، خليل، الرسالة) بابًا بابًا جنبًا إلى جنب — من المقدمات والعقيدة إلى العبادات والمعاملات والنكاح والجنايات والفرائض والآداب — بنصوصها الأصلية ومصادرها، مع خطة دراسة وتكرار متباعد وملاحظات ومكتبة شروح ومساعد. فكرة وإعداد: رشيد ايت خطر.",
+ "start_url": "./?source=pwa",
+ "scope": "./",
+ "display": "standalone",
+ "display_override": [
+  "standalone",
+  "minimal-ui"
+ ],
+ "orientation": "any",
+ "dir": "rtl",
+ "lang": "ar",
+ "background_color": "#0b1416",
+ "theme_color": "#0b1416",
+ "categories": [
+  "education",
+  "books",
+  "reference"
+ ],
+ "icons": [
+  {
+   "src": "assets/icons/icon-48.png",
+   "sizes": "48x48",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/icon-72.png",
+   "sizes": "72x72",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/icon-96.png",
+   "sizes": "96x96",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/icon-128.png",
+   "sizes": "128x128",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/icon-144.png",
+   "sizes": "144x144",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/icon-256.png",
+   "sizes": "256x256",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/icon-384.png",
+   "sizes": "384x384",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "assets/icons/maskable-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "maskable"
+  },
+  {
+   "src": "assets/icons/maskable-384.png",
+   "sizes": "384x384",
+   "type": "image/png",
+   "purpose": "maskable"
+  },
+  {
+   "src": "assets/icons/maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  },
+  {
+   "src": "assets/icons/icon.svg",
+   "sizes": "any",
+   "type": "image/svg+xml",
+   "purpose": "any"
+  }
+ ],
+ "shortcuts": [
+  {
+   "name": "القراءة",
+   "short_name": "القراءة",
+   "url": "./#read",
+   "description": "قراءة الأبواب جنبًا إلى جنب",
+   "icons": [
+    {
+     "src": "assets/icons/shortcut-read.png",
+     "sizes": "96x96",
+     "type": "image/png"
+    }
+   ]
+  },
+  {
+   "name": "خطتي",
+   "short_name": "خطتي",
+   "url": "./#study",
+   "description": "خطة اليوم وبطاقات التكرار المتباعد",
+   "icons": [
+    {
+     "src": "assets/icons/shortcut-review.png",
+     "sizes": "96x96",
+     "type": "image/png"
+    }
+   ]
+  },
+  {
+   "name": "المساعد",
+   "short_name": "المساعد",
+   "url": "./#ai",
+   "description": "اسأل من نصوص المتون",
+   "icons": [
+    {
+     "src": "assets/icons/shortcut-ai.png",
+     "sizes": "96x96",
+     "type": "image/png"
+    }
+   ]
+  },
+  {
+   "name": "المكتبة",
+   "short_name": "المكتبة",
+   "url": "./#library",
+   "description": "الشروح والتراجم والمراجع",
+   "icons": [
+    {
+     "src": "assets/icons/shortcut-lib.png",
+     "sizes": "96x96",
+     "type": "image/png"
+    }
+   ]
+  }
+ ],
+ "screenshots": [
+  {
+   "src": "assets/screens/narrow-home.png",
+   "sizes": "824x1800",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "الصفحة الرئيسية"
+  },
+  {
+   "src": "assets/screens/narrow-read.png",
+   "sizes": "824x1800",
+   "type": "image/png",
+   "form_factor": "narrow",
+   "label": "القراءة جنبًا إلى جنب"
+  },
+  {
+   "src": "assets/screens/wide-read.png",
+   "sizes": "1440x900",
+   "type": "image/png",
+   "form_factor": "wide",
+   "label": "المقارنة على الشاشة العريضة"
+  }
+ ]
+}
