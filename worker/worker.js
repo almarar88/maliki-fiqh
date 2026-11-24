@@ -1,7 +1,7 @@
 // Maliki Fiqh AI proxy — Cloudflare Worker (Workers AI binding; no API keys anywhere).
 // Grounding: the worker itself loads the site's verified texts (data/fiqh.json) and retrieves
 // passages server-side; the client only sends a question or passage ids, never raw context.
-const DATA_URL = 'https://almarar88.github.io/maliki-fiqh/data/fiqh.json';
+const DATA_URL = 'https://almarar88.github.io/maliki-fiqh/data/fiqh.json?v=3.0';
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const ORIGINS = ['https://almarar88.github.io', 'http://localhost:8765', 'http://127.0.0.1:8765'];
 const DISCLAIMER = 'هذا شرح آلي مساعد للمراجعة، وليس فتوى ولا بديلًا عن العلماء. للفتوى في الإمارات: المركز الرسمي للإفتاء 800 22 24.';
