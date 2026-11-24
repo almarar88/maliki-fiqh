@@ -6,9 +6,7 @@ def short(t):
     t=clean(t).strip('[]: '); t=re.sub(r'\s*\(\s*[٠-٩0-9]+\s*\)','',t)
     return t if len(t)<=90 else t[:88]+'…'
 # ===== الأخضري
-put_secs('muqaddima','akhdari',[prose_section('',span(A,'2.1','2.2'))])
-put_secs('tasawwuf','akhdari',[prose_section('أول ما يجب على المكلف',span(A,'2.3','4.0'))],
-   note='هذا الفصل في افتتاح المختصر قبل «فصل في الطهارة»: في تصحيح الإيمان والتوبة وحفظ الجوارح، فوضعناه هنا لقربه من مبادئ السلوك.')
+put_secs('muqaddima','akhdari',[prose_section('',span(A,'2.1','2.2')),prose_section('أول ما يجب على المكلف',span(A,'2.3','4.0'))])
 # ===== الرسالة
 put_secs('muqaddima','risala',[prose_section('مقدمة الرسالة',span(R,'75.0','77.99'))])
 put_secs('aqida','risala',[prose_section('باب ما تنطق به الألسنة وتعتقده الأفئدة من واجب أمور الديانات',span(R,'78.0','85.99'))])
@@ -63,12 +61,11 @@ for k,i,t,u in span(H,'33.16','72.99'):
     if cur is None: continue
     rows.append((cur,title,{'kind':'h','t':t,'src':u}))
 for ch,secs in group_sections(rows).items(): put_secs(ch,'bashar',secs)
-# ===== ابن عاشر (أبيات المقدمة والعقيدة والأصول والتصوف)
+# ===== ابن عاشر (أبيات المقدمة والعقيدة والأصول)
 TV2=json.load(open(S+'ashir_full2.json'))
 def avs2(a,b): return [v for v in TV2 if a<=v['line']+1<=b]
-for ch,(a,b) in {'muqaddima':(13,22),'aqida':(23,111),'usul':(112,125),'tasawwuf':(617,661)}.items():
+for ch,(a,b) in {'muqaddima':(13,22),'aqida':(23,111),'usul':(112,125)}.items():
     vs=avs2(a,b); items=[]; last=None
-    if ch=='tasawwuf': items.append({'kind':'h','t':'كِتَابُ مُبَادِئِ التَّصَوُّفِ وَهَوَادِي التَّعَرُّفِ','src':TIJ})
     for v in vs:
         if v.get('head') and v['head']!=last and ch=='aqida':
             items.append({'kind':'h','t':v['head'],'src':TIJ}); last=v['head']
@@ -80,17 +77,16 @@ for ch,(a,b) in {'muqaddima':(13,22),'aqida':(23,111),'usul':(112,125),'tasawwuf
     srcs=[TIJ]+sorted({x for v in vs for x in [v.get('cross'),v.get('cross2')] if x})
     allm=all(v['check']=='2' for v in vs)
     P[ch]['ashir']={'status':'verified' if allm else 'partial','sections':[{'title':'','items':items}],'sources':srcs}
-    if not allm: P[ch]['ashir']['note']='بعض الأبيات من مصدر واحد ولم تُطابَق آليًا على مصدر ثانٍ — عليها علامة «مصدر واحد». '+('عنوان الكتاب في نسخة شرح ميارة: «كتاب مباديء التصوف وهوادي التعرف».' if ch=='tasawwuf' else '')
+    if not allm: P[ch]['ashir']['note']='بعض الأبيات من مصدر واحد ولم تُطابَق آليًا على مصدر ثانٍ — عليها علامة «مصدر واحد».'
     P[ch]['ashir']['note']=P[ch]['ashir'].get('note','').strip() or None
     if not P[ch]['ashir']['note']: del P[ch]['ashir']['note']
 # ===== الغياب في الأبواب الجديدة
 ABS={'akhdari':('مختصر الأخضري مقصور على ما يجب على المكلف والطهارة والصلاة إلى السهو؛ فلم يتناول هذا الباب.','https://shamela.ws/book/9548'),
- 'ashir':('لم يتناول «المرشد المعين» هذا الباب؛ فهو في العقيدة والعبادات ومبادئ التصوف فقط (راجعنا المتن كاملًا).',TIJ),
+ 'ashir':('لم يتناول «المرشد المعين» هذا الباب (راجعنا المتن كاملًا).',TIJ),
  'bashar':('لم نجد للبشار بابًا بهذا العنوان في «أسهل المسالك» (راجعنا عناوين أبواب النظم كلها في الشاملة).','https://shamela.ws/book/631'),
  'khalil':('ليس في مختصر خليل بابٌ لهذا؛ فهو مختصر في الفروع يبدأ بالطهارة وينتهي بالفرائض.','https://shamela.ws/book/147313'),
  'risala':('لم تُفرد الرسالة لهذا بابًا مستقلًا.','https://shamela.ws/book/1430')}
-ABS_SPECIAL={('risala','tasawwuf'):'لم تُفرد الرسالة لمبادئ التصوف بابًا؛ وفي «باب جمل من الفرائض والسنن» (قسم الجامع هنا) فقرات في «ما يجب على الجوارح» و«الإخلاص والتوبة».',
- ('risala','usul'):'لم تُفرد الرسالة لأصول الفقه بابًا؛ وفي آخرها فقرة «أدلة الفقه» (قسم الآداب هنا).'}
+ABS_SPECIAL={('risala','usul'):'لم تُفرد الرسالة لأصول الفقه بابًا؛ وفي آخرها فقرة «أدلة الفقه» (قسم الآداب هنا).'}
 for c in chapters:
     if c['id'] not in NEW: continue
     for tid,(note,src) in ABS.items():

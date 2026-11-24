@@ -7,7 +7,7 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem('mfq.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('mfq.' + k, JSON.stringify(v)); } catch {} }
 };
-const APPV = '3.2.1';
+const APPV = '3.2.2';
 const AI_URL = 'https://maliki-fiqh-ai.amlab-q7.workers.dev';
 const ST_LABEL = { verified: 'موثّق من المصدر', partial: 'موثّق ومقابَل جزئيًا', absent: 'ليس في المتن', unverified: 'لم يُتحقق من النص بعد' };
 const ST_SHORT = { verified: '✓', partial: '◐', absent: '—', unverified: '✗' };
@@ -264,7 +264,7 @@ function renderHome(app) {
       <h1 class="hero-title">المقارِن الفقهي <span>المالكي</span></h1>
       <ul class="hero-texts">${ORDER.map(t => `<li style="--c:var(--c-${t})" data-t="${t}"><b>${T[t].sym}</b><span>${T[t].name}</span></li>`).join('')}</ul>
       ${creditHTML('hero-credit')}
-      <p class="hero-lead">من المقدمات والعقيدة إلى العبادات والذبائح والنكاح والبيوع والأقضية والفرائض والآداب ومبادئ التصوف — كل باب جنبًا إلى جنب، بنصوصه الأصلية منقولة من مصادرها، مع رابط المصدر لكل فقرة.</p>
+      <p class="hero-lead">من المقدمات والعقيدة إلى العبادات والذبائح والنكاح والبيوع والأقضية والفرائض والآداب — كل باب جنبًا إلى جنب، بنصوصه الأصلية منقولة من مصادرها، مع رابط المصدر لكل فقرة.</p>
       <div class="cta">
         <button class="btn primary" data-go="read">${I.play} ابدأ القراءة</button>
         <button class="btn" data-go="map">✧ خريطة الأبواب</button>
@@ -1021,6 +1021,19 @@ function route() {
   const nv = VIEWS.includes(v) ? v : 'home';
   if (nv !== S.view || nv === 'read') setView(nv, false); else render();
 }
+// v3.2.2: the tasawwuf chapter was removed. Akhdari's opening fasl moved to muqaddima (section 1);
+// re-key the user's own marks for it, and drop bookmarks/progress/cards that point at chapters that no longer exist.
+function migrateRemoved() {
+  if (LS.get('mig322', 0)) return;
+  const rk = k => k.startsWith('tasawwuf:akhdari:0:') ? 'muqaddima:akhdari:1:' + k.split(':')[3] : k;
+  const live = k => !!CH[k.split(':')[0]];
+  HLS = new Set([...HLS].map(rk).filter(live));
+  const re = o => { const n = {}; for (const k in o) { const nk = rk(k); if (live(nk)) n[nk] = o[k]; else n[k] = o[k]; } return n; };
+  NOTES = re(NOTES);                                   // notes on removed passages are kept in storage (export), just not shown
+  const s2 = {}; for (const k in SRS) { const nk = rk(k); if (live(nk)) s2[nk] = SRS[k]; } SRS = s2;
+  bm = new Set([...bm].filter(id => CH[id])); done = new Set([...done].filter(id => CH[id]));
+  LS.set('bm', [...bm]); LS.set('done', [...done]); save3(); LS.set('mig322', 1);
+}
 async function boot() {
   applyLook(); bindChrome();
   try { const r = await fetch('data/fiqh.json?v=' + APPV); DB = await r.json(); }
@@ -1029,6 +1042,7 @@ async function boot() {
   for (const c of DB.chapters) CH[c.id] = c;
   if (!S.on || !S.on.length || S.on.some(t => !T[t])) S.on = [...ORDER];
   if (!CH[S.ch]) S.ch = DB.chapters[0].id;
+  migrateRemoved();
   $('#loader') && $('#loader').classList.add('gone');
   S.view = ''; route();
   bindV3(); swInit();

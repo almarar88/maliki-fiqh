@@ -10,7 +10,6 @@ CASES=[
  ('v3-mobile-home',412,900,'#home',{},None),
  ('v3-mobile-read-buyu',412,900,'#read/buyu',{'layout':'stack'},'ibar'),
  ('v3-mobile-aqida',412,900,'#read/aqida',{'layout':'stack'},None),
- ('v3-mobile-tasawwuf',412,900,'#read/tasawwuf',{'layout':'stack'},None),
  ('v3-mobile-library',412,900,'#library',{},None),
  ('v3-mobile-study',412,900,'#study',{},None),
  ('v3-mobile-more',412,900,'#home',{},'more'),

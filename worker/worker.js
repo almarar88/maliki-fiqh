@@ -1,7 +1,7 @@
 // Maliki Fiqh AI proxy — Cloudflare Worker (Workers AI binding; no API keys anywhere).
 // Grounding: the worker itself loads the site's verified texts (data/fiqh.json) and retrieves
 // passages server-side; the client only sends a question or passage ids, never raw context.
-const DATA_URL = 'https://almarar88.github.io/maliki-fiqh/data/fiqh.json?v=3.0';
+const DATA_URL = 'https://almarar88.github.io/maliki-fiqh/data/fiqh.json?v=3.2.2';
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const ORIGINS = ['https://almarar88.github.io', 'https://almarar707.gitlab.io', 'https://almarar707-group.gitlab.io', 'http://localhost:8765', 'http://127.0.0.1:8765'];
 // GitLab Pages "unique domain" form: https://maliki-fiqh-<id>.gitlab.io
@@ -94,7 +94,7 @@ export default {
     if (!a.success || !g.success) return J({ error: 'rate', message: 'تجاوزت حدّ الطلبات المؤقت، حاول بعد دقيقة.' }, 429, origin);
     let body; try { body = await req.json(); } catch { return J({ error: 'json' }, 400, origin); }
     const mode = url.pathname.replace('/', '');
-    const cacheKey = new Request('https://cache.local/' + mode + '?' + encodeURIComponent(JSON.stringify(body).slice(0, 600)));
+    const cacheKey = new Request('https://cache.local/v322/' + mode + '?' + encodeURIComponent(JSON.stringify(body).slice(0, 600)));
     const cache = caches.default;
     const hit = await cache.match(cacheKey);
     if (hit) { const j = await hit.json(); return J({ ...j, cached: true }, 200, origin); }

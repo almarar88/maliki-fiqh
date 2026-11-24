@@ -1,7 +1,7 @@
 /* Service worker — المقارن الفقهي المالكي. Full offline: app shell + all texts precached.
    Update policy (v3.2+): a new version installs, activates at once (skipWaiting + clients.claim),
    removes every older cache, and reloads any open page so nobody keeps seeing an old build. */
-const VER = '3.2.1';
+const VER = '3.2.2';
 const V = 'mfq-v' + VER;
 const q = u => u + (u.includes('?') ? '&' : '?') + 'v=' + VER;
 const CORE = ['./', 'index.html', 'version.json', 'styles.css', 'app.js', 'data/fiqh.json', 'data/library.json', 'manifest.json',
