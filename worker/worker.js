@@ -3,9 +3,9 @@
 // passages server-side; the client only sends a question or passage ids, never raw context.
 const DATA_URL = 'https://almarar88.github.io/maliki-fiqh/data/fiqh.json?v=3.0';
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-const ORIGINS = ['https://almarar88.github.io', 'https://almarar707.gitlab.io', 'http://localhost:8765', 'http://127.0.0.1:8765'];
+const ORIGINS = ['https://almarar88.github.io', 'https://almarar707.gitlab.io', 'https://almarar707-group.gitlab.io', 'http://localhost:8765', 'http://127.0.0.1:8765'];
 // GitLab Pages "unique domain" form: https://maliki-fiqh-<id>.gitlab.io
-const GL_UNIQUE = /^https:\/\/maliki-fiqh-[a-z0-9]+\.gitlab\.io$/;
+const GL_UNIQUE = /^https:\/\/(maliki-fiqh|malik)-[a-z0-9-]+\.gitlab\.io$/;
 const allowed = o => ORIGINS.includes(o) || GL_UNIQUE.test(o);
 const DISCLAIMER = 'هذا شرح آلي مساعد للمراجعة، وليس فتوى ولا بديلًا عن العلماء. للفتوى في الإمارات: المركز الرسمي للإفتاء 800 22 24.';
 let DB = null, DBT = 0;
