@@ -1,10 +1,10 @@
 /* المقارِن الفقهي المالكي v3.1 — نظام تصميم موحّد */
-@font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Regular.woff2?v=3.2.0) format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Bold.woff2?v=3.2.0) format('woff2');font-weight:700;font-display:swap}
-@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Regular.woff2?v=3.2.0) format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-SemiBold.woff2?v=3.2.0) format('woff2');font-weight:500 600;font-display:swap}
-@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Bold.woff2?v=3.2.0) format('woff2');font-weight:700 900;font-display:swap}
-@font-face{font-family:'Noto Naskh Arabic';src:url(assets/fonts/NotoNaskhArabic-VF.woff2?v=3.2.0) format('woff2');font-weight:400 700;font-display:swap}
+@font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Regular.woff2?v=3.2.1) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Amiri';src:url(assets/fonts/Amiri-Bold.woff2?v=3.2.1) format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Regular.woff2?v=3.2.1) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-SemiBold.woff2?v=3.2.1) format('woff2');font-weight:500 600;font-display:swap}
+@font-face{font-family:'Fiqh Sans';src:url(assets/fonts/FiqhSansArabic-Bold.woff2?v=3.2.1) format('woff2');font-weight:700 900;font-display:swap}
+@font-face{font-family:'Noto Naskh Arabic';src:url(assets/fonts/NotoNaskhArabic-VF.woff2?v=3.2.1) format('woff2');font-weight:400 700;font-display:swap}
 :root{
   /* type: one display/reading face (Amiri) + one UI face (IBM Plex Sans Arabic) */
   --f-display:'Amiri',serif; --f-text:'Amiri',serif; --f-ui:'Fiqh Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
@@ -827,3 +827,6 @@ html[data-theme=parchment]{--panel:rgba(255,251,241,.95);--panel2:rgba(255,252,2
 html[data-theme=sepia]{--panel:rgba(250,241,222,.95);--panel2:rgba(252,245,230,.98)}
 /* text card header on narrow phones: actions drop to their own row */
 @media (max-width:420px){.chead{flex-wrap:wrap}.chead .meta{flex:1 1 calc(100% - 60px)}.cacts{flex:1 1 100%;justify-content:flex-start;padding-top:2px}}
+/* header (tablet / Fold open): brand never shrinks under the nav; nav scrolls instead */
+.brand{flex:none}.bt strong,.bt small{white-space:nowrap}.views{min-width:0;flex:1 1 auto}
+@media (max-width:1100px){.bt small{display:none}.views button{padding:8px 9px;font-size:14px}}

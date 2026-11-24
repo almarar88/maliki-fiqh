@@ -23,5 +23,7 @@ async def main():
     await state(pg,'after resume (no reload)')
     await pg.goto(URL+'#home'); await pg.wait_for_timeout(5000)
     await state(pg,'after relaunch')
+    await pg.wait_for_timeout(6000)
+    print('regstate', await pg.evaluate("navigator.serviceWorker.getRegistration().then(r=>JSON.stringify([r.installing&&r.installing.scriptURL,r.waiting&&r.waiting.state,r.active&&r.active.state]))"), await pg.evaluate('caches.keys()'), flush=True)
     await ctx.close()
 asyncio.run(main())
